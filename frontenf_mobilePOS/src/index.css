@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-light: #E6F4F9;
+  --primary: #0492C2;
+  --primary-dark: #036B8F;
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
+}
+
+@layer components {
+  .sidebar-icon {
+    @apply w-6 h-6 text-gray-500;
+  }
+  
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors;
+  }
+
+  .nav-link.active {
+    @apply bg-primary text-white hover:bg-primary/90;
+  }
+
+  .category-button {
+    @apply px-6 py-2 rounded-full text-sm font-medium transition-colors;
+  }
+
+  .category-button.active {
+    @apply bg-primary text-white;
+  }
+
+  .menu-card {
+    @apply bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow border-2 border-[#0492C2];
+  }
+
+  .size-button {
+    @apply w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors;
+  }
+
+  .size-button.active {
+    @apply border-primary text-primary;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-[#0492C2] text-white rounded-lg hover:bg-[#036B8F] transition-colors duration-200 flex items-center gap-2 shadow-sm border-2 border-[0492C2];
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-white border-2 border-[#0492C2] rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors duration-200 shadow-sm;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-sm border-2 border-[#E6F4F9] hover:shadow-md transition-shadow duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 border-2 border-[#E6F4F9] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition-all duration-200;
+  }
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0492C2;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #036B8F;
+}
