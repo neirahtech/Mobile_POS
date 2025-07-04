@@ -1,170 +1,155 @@
 import { useRef, useEffect, useState } from 'react';
 import BillDetails from '../components/BillDetails.jsx';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-
-import {
-  Square2StackIcon,
-  DevicePhoneMobileIcon,
-  ComputerDesktopIcon,
-  Battery50Icon,
-  WifiIcon,
-} from '@heroicons/react/24/outline';
-import { GiSmartphone, GiLaptop, GiHeadphones, GiBatteryPack, GiNetworkBars } from 'react-icons/gi';
-
-const categories = [
-  { id: 'all', name: 'All Items', icon: GiSmartphone },
-  { id: 'phones', name: 'Phones', icon: GiSmartphone },
-  { id: 'laptops', name: 'Laptops', icon: GiLaptop },
-  { id: 'accessories', name: 'Accessories', icon: GiHeadphones },
-  { id: 'monitors', name: 'Monitors', icon: GiLaptop },
-  { id: 'batteries', name: 'Batteries', icon: GiBatteryPack },
-  { id: 'network', name: 'Networking', icon: GiNetworkBars },
-];
-
-const menuItems = [
-  {
-    id: 1,
-    name: 'iPhone 16 Pro Max',
-    price: 245000.0,
-    image:
-      'https://images.unsplash.com/photo-1726587912121-ea21fcc57ff8?q=80&w=2080',
-    category: 'smartphone',
-    available: 10,
-    sold: 4,
-  },
-  {
-    id: 2,
-    name: 'Samsung Galaxy S23 Ultra',
-    price: 130500.0,
-    image:
-      'https://images.unsplash.com/photo-1676115724686-476a7337dfb6?q=80&w=1923',
-    category: 'smartphone',
-    available: 8,
-    sold: 5,
-  },
-  {
-    id: 3,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 4,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 5,
-    name: 'OnePlus 12',
-    price: 100950.0,
-    image:
-      'https://images.unsplash.com/photo-1673718424091-5fb734062c05?q=80&w=1965',
-    category: 'smartphone',
-    available: 9,
-    sold: 3,
-  },
-  {
-    id: 6,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 7,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 8,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 9,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 10,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 11,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 12,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-  {
-    id: 13,
-    name: 'iPhone 16',
-    price: 190100.0,
-    image:
-      'https://images.unsplash.com/photo-1726828537956-61ae115d7d7a?q=80&w=1932',
-    category: 'smartphone',
-    available: 6,
-    sold: 2,
-  },
-];
+import { usePOS } from '../context/POSContext';
+import SalesDetails from '../components/SalesDetails.jsx';
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [quantities, setQuantities] = useState({});
+  const [categories, setCategories] = useState([{ id: 'all', name: 'All Items' }]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [categoriesError, setCategoriesError] = useState(null);
+  const [menuItems, setMenuItems] = useState([]);
+  const [loadingMenuItems, setLoadingMenuItems] = useState(true);
+  const [menuItemsError, setMenuItemsError] = useState(null);
+  // Track reserved quantities for items in cart
+  const [reserved, setReserved] = useState({});
+  const [showSalesDetails, setShowSalesDetails] = useState(false);
   const searchInputRef = useRef(null);
+  const { isSidebarCollapsed } = usePOS();
 
   useEffect(() => {
     if (searchInputRef.current) {
       searchInputRef.current.focus();
     }
+  }, []);
+
+  useEffect(() => {
+    setLoadingCategories(true);
+    fetch('http://localhost:3000/api/categories') // Use full URL for local dev
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch');
+        return res.json();
+      })
+      .then(data => {
+        // Ensure data is an array of objects with a 'name' property
+        if (Array.isArray(data) && data.length && data[0].name) {
+          setCategories([{ id: 'all', name: 'All Items' }, ...data]);
+          setCategoriesError(null);
+        } else {
+          setCategories([{ id: 'all', name: 'All Items' }]);
+          setCategoriesError('No categories found');
+        }
+        setLoadingCategories(false);
+      })
+      .catch((err) => {
+        setCategories([{ id: 'all', name: 'All Items' }]);
+        setCategoriesError('Could not load categories');
+        setLoadingCategories(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    // Fetch and merge items and grn data like in StockComponent
+    const fetchMenuItems = async () => {
+      setLoadingMenuItems(true);
+      setMenuItemsError(null);
+      try {
+        // Fetch items
+        const itemsRes = await fetch('http://localhost:3000/api/items');
+        if (!itemsRes.ok) throw new Error('Failed to fetch items');
+        const itemsData = await itemsRes.json();
+        const items = itemsData?.items || [];
+
+        // Fetch GRNs
+        const grnRes = await fetch('http://localhost:3000/api/grn');
+        if (!grnRes.ok) throw new Error('Failed to fetch grns');
+        const grnData = await grnRes.json();
+        const grns = Array.isArray(grnData) ? grnData : grnData?.grns || [];
+
+        // Build maps for quantities, latest prices, and discounts from GRNs
+        const qtyMap = {};
+        const priceMap = {};
+        const discountMap = {};
+
+        // Process GRNs in reverse order to get latest prices and discounts
+        [...grns].reverse().forEach(grn => {
+          (grn.items || []).forEach(item => {
+            const code = item.item_code || item.code;
+            qtyMap[code] = (qtyMap[code] || 0) + Number(item.quantity || 0);
+            if (!priceMap[code] || grn.id > priceMap[code].grnId) {
+              priceMap[code] = {
+                price: item.retail_price || item.price || 0,
+                grnId: grn.id
+              };
+              discountMap[code] = {
+                discount: item.sale_discount || 0,
+                grnId: grn.id
+              };
+            }
+          });
+        });
+
+        // Get all items that exist in GRNs
+        const itemsInGrns = [];
+        const itemCodeMap = {};
+        grns.forEach(grn => {
+          (grn.items || []).forEach(grnItem => {
+            const code = grnItem.item_code || grnItem.code;
+            if (!itemCodeMap[code]) {
+              const matchingItem = items.find(item =>
+                (item.item_code || item.model_number || item.code) === code
+              );
+              if (matchingItem) {
+                itemCodeMap[code] = true;
+                itemsInGrns.push({
+                  ...matchingItem,
+                  retail_price: grnItem.retail_price || grnItem.price || matchingItem.retail_price || 0,
+                  barcode: code,
+                  sale_discount: grnItem.sale_discount || 0,
+                  // image, name, etc. will be mapped below
+                });
+              }
+            }
+          });
+        });
+
+        // Map to menuItems format, include discount
+        const mergedMenuItems = itemsInGrns.map(item => {
+          const code = item.item_code || item.model_number || item.code || '';
+          // Image URL construction
+          let imageUrl = '';
+          if (item.image_url) imageUrl = item.image_url;
+          else if (item.image) {
+            imageUrl = item.image.startsWith('http')
+              ? item.image
+              : `http://localhost:3000/uploads/${item.image}`;
+          }
+          return {
+            id: item.id,
+            name: item.name || item.item_name || '',
+            price: Number(item.retail_price || item.retailPrice || item.price || 0),
+            image: imageUrl,
+            available: qtyMap[code] || 0,
+            barcode: code,
+            discount: (discountMap[code] && discountMap[code].discount) || 0,
+          };
+        });
+
+        setMenuItems(mergedMenuItems);
+        setMenuItemsError(null);
+      } catch (err) {
+        setMenuItems([]);
+        setMenuItemsError('Could not load items');
+      } finally {
+        setLoadingMenuItems(false);
+      }
+    };
+
+    fetchMenuItems();
   }, []);
 
   const handleQuantityChange = (itemId, delta) => {
@@ -190,27 +175,63 @@ export default function Home() {
         return [...prev, { ...item, qty, price: item.price }];
       }
     });
+    // Update reserved
+    setReserved(prev => ({
+      ...prev,
+      [item.id]: (prev[item.id] || 0) + qty
+    }));
     setQuantities((q) => ({ ...q, [item.id]: 1 }));
   };
 
   const handleRemoveFromCart = (idx) => {
-    setCart(cart => cart.filter((_, i) => i !== idx));
+    setCart(cart => {
+      const item = cart[idx];
+      if (item) {
+        setReserved(prev => ({
+          ...prev,
+          [item.id]: Math.max(0, (prev[item.id] || 0) - item.qty)
+        }));
+      }
+      return cart.filter((_, i) => i !== idx);
+    });
   };
 
   const handleIncreaseQty = (idx) => {
     setCart(cart => cart.map((item, i) =>
       i === idx ? { ...item, qty: item.qty + 1 } : item
     ));
+    setReserved(prev => {
+      const item = cart[idx];
+      if (item) {
+        return { ...prev, [item.id]: (prev[item.id] || 0) + 1 };
+      }
+      return prev;
+    });
   };
 
   const handleDecreaseQty = (idx) => {
     setCart(cart => cart.map((item, i) =>
       i === idx && item.qty > 1 ? { ...item, qty: item.qty - 1 } : item
     ));
+    setReserved(prev => {
+      const item = cart[idx];
+      if (item && item.qty > 1) {
+        return { ...prev, [item.id]: Math.max(0, (prev[item.id] || 0) - 1) };
+      }
+      return prev;
+    });
   };
 
+  // Cancel billing: restore reserved quantities
+  const handleCancel = () => {
+    setCart([]);
+    setReserved({});
+  };
+
+  // Checkout: clear cart and reserved, but do NOT restore available (simulate reduction)
   const handleCheckout = () => {
     setCart([]);
+    setReserved({});
     alert('Order placed!');
   };
 
@@ -229,155 +250,253 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
+  // Helper: get available count minus reserved
+  const getDisplayAvailable = (item) => {
+    return Math.max(0, (item.available || 0) - (reserved[item.id] || 0));
+  };
+
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-[#e4f4fa] to-[#f8fbff] overflow-x-hidden">
-      {/* Main Content */}
-      <main className="flex-1 min-w-0 px-4 py-6 overflow-y-auto max-w-full transition-all duration-300">
-        {/* Search Bar */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="relative w-full max-w-md">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search items..."
-              className="w-full h-12 text-base px-12 pr-3 rounded-xl border border-blue-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 bg-white transition-all duration-200 hover:shadow-xl focus:shadow-xl"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ boxShadow: '0 2px 16px 0 #b6e0fe33' }}
-            />
-            <MagnifyingGlassIcon className="w-6 h-6 text-blue-300 absolute left-4 top-1/2 -translate-y-1/2" />
-          </div>
-          <div className="flex items-center gap-2 ml-4">
-            <img
-              src="https://ui-avatars.com/api/?name=Manager&background=0492C2&color=fff"
-              alt="Manager"
-              className="w-8 h-8 rounded-full border-2 border-[#b6e0fe] shadow"
-              style={{ boxShadow: '0 2px 8px 0 #b6e0fe33' }}
-            />
-            <div className="hidden sm:block leading-tight text-[11px]">
-              <div className="font-semibold text-[#0492C2]">Manager</div>
-              <div className="text-gray-500 text-[10px]">Abcde</div>
+    <div className="h-screen flex p-2 gap-2 overflow-hidden bg-gradient-to-br from-white via-[#f8fbff] to-[#e4f4fa] relative font-inter text-[#03648a]">
+      {/* Main Content Container - Left Side */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden main-content-container border-glow rounded-2xl bg-white/80 backdrop-blur-sm border border-transparent"
+        style={{ maxHeight: 'calc(100vh - 64px)' }}
+      >
+        {/* Header Section - Fixed */}
+        <div className="flex-none p-2 border-b border-[#7ed8fa]/30">
+          {/* Search Bar */}
+          <div className="flex justify-between items-center mb-1">
+            <div className="relative w-full max-w-sm">
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search items..."
+                className="w-full h-8 text-sm px-8 pr-3 rounded-lg border border-[#7ed8fa]/40 shadow-lg focus:outline-none focus:ring-2 focus:ring-[#7ed8fa]/30 focus:border-[#7ed8fa]/60 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-xl focus:shadow-xl search-input search-glow text-[#03648a] placeholder-[#94aefe]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ fontWeight: 500 }}
+              />
+              <MagnifyingGlassIcon className="w-4 h-4 text-[#7ed8fa] absolute left-2 top-1/2 -translate-y-1/2 transition-colors duration-300" />
+            </div>
+            <div className="flex items-center gap-2 ml-2">
+              <img
+                src="https://ui-avatars.com/api/?name=Manager&background=0492C2&color=fff"
+                alt="Manager"
+                className="w-5 h-5 rounded-full border-2 border-[#7ed8fa]/40 shadow-lg hover:border-[#94aefe]/60 transition-all duration-300"
+              />
+              <div className="hidden sm:block leading-tight text-[8px]">
+                <div className="font-semibold text-[#03648a]">Manager</div>
+                <div className="text-[#7ed8fa] text-[7px]">Abcde</div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Home Heading */}
-        <h1 className="text-2xl font-bold mb-4 text-[#0492C2] tracking-wide drop-shadow home-title-anim">Home</h1>
-
-        {/* Categories */}
-        <div className="mb-5">
-          <h2 className="text-xs font-semibold mb-2 text-[#0492C2]">Categories</h2>
-         <div className="overflow-x-auto">
-  <div className="flex gap-2 w-max pb-1 px-1 h-16 items-center">
-    {categories.map((category) => (
-      <button
-        key={category.id}
-        onClick={() => setSelectedCategory(category.id)}
-        className={`px-2 py-1 rounded-xl whitespace-nowrap text-[12px] border font-semibold shadow transition-all duration-200 flex items-center gap-1 ${
-          selectedCategory === category.id
-            ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white border-[#0492C2] scale-105 shadow-lg'
-            : 'bg-white text-[#0492C2] hover:bg-[#e4f4fa] border-[#b6e0fe]'
-        } hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0492C2]`}
-        style={{
-          boxShadow: selectedCategory === category.id
-            ? '0 2px 12px 0 #b6e0fe55'
-            : undefined,
-        }}
-      >
-        <category.icon className="w-5 h-5 drop-shadow" />
-        {category.name}
-      </button>
-    ))}
-  </div>
-</div>
-
-        </div>
-
-        {/* Menu Items */}
-        <div>
-          <h2 className="text-xs font-semibold mb-3 text-[#0492C2]">Select Menu</h2>
-          <div
-            className="
-              grid 
-              grid-cols-[repeat(auto-fit,minmax(170px,1fr))]
-              gap-4
-              animate-menu-pop
-            "
-          >
-            {filteredMenuItems.map((item, idx) => (
-              <div
-                key={item.id}
-                className="menu-card p-3 rounded-2xl border border-[#b6e0fe] bg-gradient-to-br from-[#f8fbff] to-[#e4f4fa] flex flex-col items-center text-[12px] overflow-hidden max-w-[200px] shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.04] menu-card-anim group"
-                style={{ animationDelay: `${idx * 0.04}s` }}
-              >
-                <div className="flex items-center w-full mb-2">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-12 h-10 rounded-xl bg-blue-50 object-cover mr-2 border border-[#b6e0fe] shadow group-hover:scale-110 transition-transform duration-300"
-                    style={{ boxShadow: '0 2px 8px 0 #b6e0fe33' }}
-                  />
-                  <div className="font-semibold truncate text-[#0492C2] group-hover:text-blue-700 transition-colors duration-200">{item.name}</div>
-                </div>
-                <div className="w-full flex flex-col gap-1">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-blue-400 font-semibold group-hover:text-[#0492C2] transition-colors duration-200">
-                      {item.available} Avail • {item.sold} Sold
-                    </span>
-                    <span className="font-bold text-[#0492C2] group-hover:text-blue-700 transition-colors duration-200">
-                      LKR {item.price.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="w-6 h-6 rounded-full bg-[#e4f4fa] flex items-center justify-center text-[14px] text-[#0492C2] font-bold border border-[#b6e0fe] hover:bg-[#b6e0fe] hover:text-white transition"
-                        onClick={() => handleQuantityChange(item.id, -1)}
-                        tabIndex={0}
-                      >
-                        -
-                      </button>
-                      <span className="text-[13px] font-semibold">{quantities[item.id] || 1}</span>
-                      <button
-                        className="w-6 h-6 rounded-full bg-[#e4f4fa] flex items-center justify-center text-[14px] text-[#0492C2] font-bold border border-[#b6e0fe] hover:bg-[#b6e0fe] hover:text-white transition"
-                        onClick={() => handleQuantityChange(item.id, 1)}
-                        tabIndex={0}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <button
-                      className="bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white px-3 py-1 rounded-xl text-[12px] font-bold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0492C2] scale-100 group-hover:scale-105"
-                      onClick={() => handleAddToCart(item)}
-                      tabIndex={0}
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {filteredMenuItems.length === 0 && (
-              <div className="col-span-full text-center text-[#0492C2] font-semibold py-8 opacity-70">
-                No items found.
-              </div>
-            )}
+          {/* Home Heading and Sales Details Button */}
+          <div className="flex items-center justify-between mt-2">
+            <h1 className="text-base font-bold text-[#03648a] flex items-center gap-2">
+              Home
+            </h1>
+            <button
+              className="ml-2 px-3 py-1 rounded-lg bg-gradient-to-r from-[#e4f4fa] to-[#b6e0fe] text-[#03648a] font-semibold text-xs shadow transition-all duration-200 flex items-center gap-1"
+              style={{ transition: 'all 0.2s', background: 'linear-gradient(to right, #e4f4fa, #b6e0fe)' }}
+              onClick={() => setShowSalesDetails(true)}
+              onMouseOver={e => e.currentTarget.style.background = '#c5ecfc'}
+              onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(to right, #e4f4fa, #b6e0fe)'}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 20 20">
+                <rect x="3" y="5" width="14" height="10" rx="2" fill="#0492C2"/>
+                <rect x="3" y="5" width="14" height="10" rx="2" fill="#c5ecfc" fillOpacity="0.7"/>
+                <rect x="3" y="5" width="14" height="10" rx="2" stroke="#0492C2" strokeWidth="1.5"/>
+                <rect x="6" y="8" width="8" height="1.5" rx="0.75" fill="#0492C2"/>
+                <rect x="6" y="11" width="5" height="1.5" rx="0.75" fill="#0492C2"/>
+              </svg>
+              Sales Details
+            </button>
           </div>
         </div>
-      </main>
-
-      {/* Bill Details Sidebar - right side */}
-      <section className="flex-shrink-0 w-full max-w-md border-l border-gray-200 bg-white p-0 sm:p-4 overflow-y-auto flex flex-col justify-start z-10 shadow-2xl animate-fadein">
-        <BillDetails
-          cart={cart}
-          onRemove={handleRemoveFromCart}
-          onIncrease={handleIncreaseQty}
-          onDecrease={handleDecreaseQty}
-          onCheckout={handleCheckout}
-        />
-      </section>
-      {/* Animations for home page */}
+        {/* Main Content or Sales Details */}
+        <div className="flex-1 overflow-y-auto p-2" style={{ height: 'calc(100vh - 172px)' }}>
+          {showSalesDetails ? (
+            <div>
+              <button
+                className="mb-4 px-3 py-1 rounded-lg bg-gradient-to-r from-[#e4f4fa] to-[#b6e0fe] text-[#03648a] font-semibold text-xs shadow transition-all duration-200 flex items-center gap-1"
+                style={{ transition: 'all 0.2s', background: 'linear-gradient(to right, #e4f4fa, #b6e0fe)' }}
+                onClick={() => setShowSalesDetails(false)}
+                onMouseOver={e => e.currentTarget.style.background = '#c5ecfc'}
+                onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(to right, #e4f4fa, #b6e0fe)'}
+              >
+                <svg width="16" height="16" fill="none" viewBox="0 0 20 20">
+                  <path d="M12 15l-5-5 5-5" stroke="#0492C2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back
+              </button>
+              <SalesDetails />
+            </div>
+          ) : (
+            <>
+              {/* Categories Section - Fixed */}
+              <div className="flex-none p-2 border-b border-[#7ed8fa]/30">
+                <h2 className="text-xs font-semibold mb-1 text-[#03648a]">Categories</h2>
+                <div className="overflow-x-auto">
+                  <div className="flex gap-1 w-max pb-1 px-1 h-8 items-center">
+                    {loadingCategories ? (
+                      <span className="text-[10px] text-[#94aefe]">Loading...</span>
+                    ) : categoriesError ? (
+                      <span className="text-[10px] text-red-400">{categoriesError}</span>
+                    ) : (
+                      categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => setSelectedCategory(category.id)}
+                          className={`px-2 py-0.5 rounded-lg whitespace-nowrap text-[9px] border font-semibold shadow transition-all duration-300 flex items-center gap-1 category-btn ${
+                            selectedCategory === category.id
+                              ? 'bg-gradient-to-r from-[#7ed8fa]/40 to-[#94aefe]/30 text-[#03648a] border-[#7ed8fa]/60 scale-105 shadow-lg active-category'
+                              : 'bg-white/80 text-[#03648a] hover:bg-[#7ed8fa]/10 hover:text-[#03648a] border-[#7ed8fa]/30 hover:border-[#94aefe]/40'
+                          } hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#7ed8fa]/30`}
+                          style={{ fontWeight: 600 }}
+                        >
+                          {category.name}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* Menu Items Section - Scrollable */}
+              <h2 className="text-xs font-semibold mb-2 text-[#03648a]">Select Menu</h2>
+              <div
+                className={`
+                  grid 
+                  ${isSidebarCollapsed ? 'grid-cols-4' : 'grid-cols-3'}
+                  gap-2
+                  animate-menu-pop
+                `}
+              >
+                {loadingMenuItems ? (
+                  <div className="col-span-full text-center text-[#94aefe] font-semibold py-8 opacity-70">
+                    Loading items...
+                  </div>
+                ) : menuItemsError ? (
+                  <div className="col-span-full text-center text-red-400 font-semibold py-8 opacity-70">
+                    {menuItemsError}
+                  </div>
+                ) : filteredMenuItems.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="menu-card p-2 rounded-xl border border-[#7ed8fa]/40 bg-white/90 backdrop-blur-sm flex flex-col items-center text-[9px] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] menu-card-anim group modern-card card-glow"
+                    style={{ animationDelay: `${idx * 0.04}s` }}
+                  >
+                    <div className="flex items-start w-full mb-1">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-14 h-10 rounded-md bg-[#7ed8fa]/10 object-cover mr-2 border-2 shadow group-hover:scale-110 transition-transform duration-300"
+                        style={{ flexShrink: 0, borderColor: '#0492c2' }}
+                      />
+                      <div className="flex-1 flex flex-col">
+                        <div className="font-semibold truncate text-[#03648a] group-hover:text-[#03648a] transition-colors duration-200 text-[8px]">{item.name}</div>
+                        <div className="text-[7px] text-[#7ed8fa] font-semibold">
+                          {getDisplayAvailable(item)} Avail
+                        </div>
+                        <div className="text-[7px] text-[#03648a] font-semibold">
+                          Barcode: {item.barcode}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-full flex flex-col gap-1">
+                      <div className="flex justify-between items-center text-[7px]">
+                        <span className="font-bold text-[#03648a] group-hover:text-[#03648a] transition-colors duration-200">
+                          LKR {item.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center gap-1">
+                          <button
+                            className="qty-btn w-3 h-3 rounded-full bg-white flex items-center justify-center text-[8px] text-[#03648a] font-bold border border-[#7ed8fa]/60 hover:bg-[#7ed8fa]/10 hover:text-[#03648a] active:bg-[#7ed8fa]/20 active:text-[#03648a] transition-all duration-200"
+                            onClick={() => handleQuantityChange(item.id, -1)}
+                            tabIndex={0}
+                          >
+                            -
+                          </button>
+                          <span className="text-[8px] font-semibold text-[#03648a]">{quantities[item.id] || 1}</span>
+                          <button
+                            className="qty-btn w-3 h-3 rounded-full bg-white flex items-center justify-center text-[8px] text-[#03648a] font-bold border border-[#7ed8fa]/60 hover:bg-[#7ed8fa]/10 hover:text-[#03648a] active:bg-[#7ed8fa]/20 active:text-[#03648a] transition-all duration-200"
+                            onClick={() => handleQuantityChange(item.id, 1)}
+                            tabIndex={0}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button
+                          className="btn-3d bg-gradient-to-r from-[#7ed8fa]/40 to-[#94aefe]/30 text-[#03648a] px-2 py-0.5 rounded-lg text-[8px] font-bold border border-[#7ed8fa]/40 hover:from-[#7ed8fa]/60 hover:to-[#94aefe]/50 hover:text-[#03648a] active:from-[#7ed8fa]/80 active:to-[#ffbdbd]/60 active:text-[#a10000] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7ed8fa]/30 scale-100 group-hover:scale-105 add-btn"
+                          onClick={() => handleAddToCart(item)}
+                          tabIndex={0}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {(!loadingMenuItems && !menuItemsError && filteredMenuItems.length === 0) && (
+                  <div className="col-span-full text-center text-[#94aefe] font-semibold py-8 opacity-70">
+                    No items found.
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      {/* Bill Details Container - Right Side - Fixed */}
+      {!showSalesDetails && (
+        <div
+          className="flex-shrink-0 w-full max-w-md h-full overflow-hidden billing-container border-glow rounded-2xl border border-transparent bill-glow"
+          style={{ maxHeight: 'calc(100vh - 64px)' }}
+        >
+          <BillDetails
+            cart={cart}
+            onRemove={handleRemoveFromCart}
+            onIncrease={handleIncreaseQty}
+            onDecrease={handleDecreaseQty}
+            onCheckout={handleCheckout}
+          />
+          {/* Add a cancel button for demonstration */}
+          <div className="p-2">
+            <button
+              className="btn-3d bg-gradient-to-r from-[#e57373]/40 to-[#ffbdbd]/30 text-[#a10000] px-2 py-0.5 rounded-lg text-[10px] font-bold border border-[#e57373]/40 hover:from-[#e57373]/60 hover:to-[#ffbdbd]/50 hover:text-[#a10000] active:from-[#e57373]/80 active:to-[#ffbdbd]/60 active:text-[#a10000] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#e57373]/30 scale-100 group-hover:scale-105 add-btn"
+              onClick={handleCancel}
+              tabIndex={0}
+              style={{ marginTop: 8 }}
+            >
+              Cancel Billing
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Enhanced Animations and Styles */}
       <style>{`
+        .font-inter { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
+        .search-glow {
+          box-shadow: 0 0 0 2px #7ed8fa, 0 0 8px 2px #94aefe;
+        }
+        .search-glow:focus, .search-glow:active {
+          box-shadow: 0 0 0 3px #7ed8fa, 0 0 12px 4px #94aefe;
+        }
+        .card-glow {
+          box-shadow: 0 0 0 2px #7ed8fa, 0 0 12px 2px #94aefe;
+        }
+        .card-glow:hover, .card-glow:focus-within {
+          box-shadow: 0 0 0 3px #7ed8fa, 0 0 18px 6px #94aefe;
+        }
+        .bill-glow {
+          box-shadow: 0 0 0 2px #7ed8fa, 0 0 16px 2px #94aefe;
+        }
+        .bill-glow:focus-within, .bill-glow:hover {
+          box-shadow: 0 0 0 3px #7ed8fa, 0 0 24px 8px #94aefe;
+        }
+        .billing-container {
+          animation: borderGlow 3s ease-in-out infinite;
+          animation-delay: 1.5s;
+        }
         .home-title-anim {
           animation: homeTitlePop 0.8s cubic-bezier(.4,0,.2,1);
         }
@@ -392,12 +511,159 @@ export default function Home() {
           from { opacity: 0; transform: scale(0.97) translateY(24px);}
           to { opacity: 1; transform: scale(1) translateY(0);}
         }
-        .animate-fadein {
-          animation: fadein 1.2s cubic-bezier(0.4,0,0.2,1);
+        .category-btn {
+          backdrop-filter: blur(8px);
         }
-        @keyframes fadein {
-          from { opacity: 0; transform: translateY(24px);}
-          to { opacity: 1; transform: translateY(0);}
+        .active-category {
+          position: relative;
+          overflow: hidden;
+          border-bottom: 2px solid #03648a !important;
+          box-shadow: 
+            0 4px 6px rgba(3, 100, 138, 0.2),
+            0 1px 0 rgba(255, 255, 255, 0.7) inset !important;
+        }
+        .active-category::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, #7ed8fa44, transparent);
+          animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        .modern-card {
+          backdrop-filter: blur(8px);
+          border: 1px solid #7ed8fa33;
+        }
+        .modern-card:hover {
+          border-color: #7ed8fa;
+          box-shadow: 
+            0 20px 40px #7ed8fa22,
+            0 8px 16px #94aefe22;
+        }
+        .add-btn {
+          backdrop-filter: blur(8px);
+        }
+        .add-btn:hover {
+          transform: translateY(-1px);
+        }
+        .add-btn:active {
+          transform: translateY(0);
+        }
+        @keyframes borderGlow {
+          0%, 100% { 
+            border-color: #7ed8fa66;
+            box-shadow: 0 0 4px 1px #7ed8fa33;
+          }
+          50% { 
+            border-color: #94aefe;
+            box-shadow: 0 0 12px 3px #94aefe55;
+          }
+        }
+        .border-glow {
+          animation: borderGlow 3s ease-in-out infinite;
+        }
+        /* Custom scrollbar for main content */
+        .main-content-container .overflow-y-auto::-webkit-scrollbar {
+          width: 4px;
+        }
+        .main-content-container .overflow-y-auto::-webkit-scrollbar-track {
+          background: rgba(255,255,255,0.5);
+          border-radius: 2px;
+        }
+        .main-content-container .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #7ed8fa99, #94aefecc);
+          border-radius: 2px;
+        }
+        .main-content-container .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #7ed8fa, #94aefe);
+        }
+        
+        /* 3D Button Effects */
+        .btn-3d {
+          position: relative;
+          border-bottom: 2px solid #03648a66;
+          box-shadow: 
+            0 3px 5px rgba(3, 100, 138, 0.1),
+            0 1px 0 rgba(255, 255, 255, 0.7) inset;
+          transition: all 0.1s ease;
+        }
+        
+        .btn-3d:hover {
+          transform: translateY(-1px);
+          box-shadow: 
+            0 5px 8px rgba(3, 100, 138, 0.2),
+            0 1px 0 rgba(255, 255, 255, 0.7) inset;
+        }
+        
+        .btn-3d:active {
+          transform: translateY(1px);
+          border-bottom-width: 1px;
+          box-shadow: 
+            0 1px 2px rgba(3, 100, 138, 0.1),
+            0 1px 1px rgba(0,0,0,0.1) inset;
+        }
+        
+        /* Quantity buttons */
+        .qty-btn {
+          position: relative;
+          border-bottom: 1px solid #03648a66;
+          box-shadow: 
+            0 2px 3px rgba(3, 100, 138, 0.1),
+            0 1px 0 rgba(255, 255, 255, 0.7) inset;
+          transition: all 0.1s ease;
+        }
+        
+        .qty-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 
+            0 3px 4px rgba(3, 100, 138, 0.15),
+            0 1px 0 rgba(255, 255, 255, 0.7) inset;
+        }
+        
+        .qty-btn:active {
+          transform: translateY(1px);
+          border-bottom-width: 0.5px;
+          box-shadow: 
+            0 1px 1px rgba(3, 100, 138, 0.1),
+            0 1px 1px rgba(0,0,0,0.1) inset;
+        }
+        
+        /* Enhanced glow effects */
+        .card-glow {
+          box-shadow: 0 0 0 2px #7ed8fa, 0 0 12px 2px #94aefe, 0 3px 5px rgba(0,0,0,0.1);
+        }
+        
+        .card-glow:hover, .card-glow:focus-within {
+          box-shadow: 0 0 0 3px #7ed8fa, 0 0 18px 6px #94aefe, 0 5px 10px rgba(0,0,0,0.15);
+        }
+        
+        .bill-glow {
+          box-shadow: 0 0 0 2px #7ed8fa, 0 0 16px 2px #94aefe, 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .bill-glow:focus-within, .bill-glow:hover {
+          box-shadow: 0 0 0 3px #7ed8fa, 0 0 24px 8px #94aefe, 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        /* Category buttons hover effect */
+        .category-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 
+            0 4px 6px rgba(3, 100, 138, 0.15),
+            0 1px 0 rgba(255, 255, 255, 0.7) inset;
+        }
+        
+        .category-btn:active {
+          transform: translateY(0);
+          box-shadow: 
+            0 1px 2px rgba(3, 100, 138, 0.1),
+            0 1px 1px rgba(0,0,0,0.1) inset;
         }
       `}</style>
     </div>

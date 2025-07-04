@@ -91,7 +91,7 @@ export default function AddItem() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fbff] to-[#e4f4fa] py-8 px-4 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fbff] to-[#e4f4fa] py-6 px-4 overflow-hidden">
       {/* Floating Elements Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         {/* Floating bubbles */}
@@ -134,23 +134,23 @@ export default function AddItem() {
 
       <div className="max-w-5xl mx-auto relative z-10">
         {/* Header Section */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-[#e0eefa]">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 p-5 bg-white/80 backdrop-blur-sm rounded-xl shadow border border-[#e0eefa]">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/items')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/80 backdrop-blur-sm border border-[#e0eefa] rounded-xl hover:bg-[#f0f9ff] transition-all duration-300 shadow-sm hover:shadow-lg text-[#0492C2] font-medium hover:border-[#b6e0fe]"
+              onClick={() => navigate('/inventory')}
+              className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm border border-[#e0eefa] rounded-lg hover:bg-[#f0f9ff] transition-all duration-300 shadow-sm hover:shadow text-[#0492C2] font-medium hover:border-[#b6e0fe]"
               type="button"
             >
               <ArrowLeftIcon className="w-5 h-5 text-[#0492C2]" />
               <span>Back</span>
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-[#03648a]">Add New Product</h1>
-              <p className="text-[#7f8c8d] mt-1">Fill out the details below to add a new item to your inventory</p>
+              <h1 className="text-2xl font-bold text-[#03648a]">Add New Stock</h1>
+              <p className="text-[#7f8c8d] mt-1 text-sm">Fill out the details below to add a new stock</p>
             </div>
           </div>
           <button
-            className="px-6 py-3.5 bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 disabled:opacity-70 group"
+            className="px-5 py-3 bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 text-white font-bold rounded-lg shadow hover:shadow-md transition-all duration-300 flex items-center gap-2 disabled:opacity-70 group"
             type="submit"
             form="add-item-form"
             disabled={isSubmitting}
@@ -184,34 +184,34 @@ export default function AddItem() {
           </button>
         </div>
 
-        <form id="add-item-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8 relative z-10">
+        <form id="add-item-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative z-10">
           {/* Item Details Card */}
-          <div className="bg-white/80 backdrop-blur-sm p-6 space-y-6 rounded-2xl shadow-lg border border-[#e0eefa] transition-all hover:shadow-xl">
-            <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#e0eefa]">
+          <div className="bg-white/80 backdrop-blur-sm p-5 space-y-5 rounded-xl shadow border border-[#e0eefa] transition-all hover:shadow-lg">
+            <div className="flex flex-wrap items-center justify-between pb-2 border-b border-[#e0eefa]">
               <h2 className="text-xl font-bold text-[#03648a] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                   </svg>
                 </div>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0492C2] to-[#b6e0fe]">
-                  Product Details
+                  Stock Details
                 </span>
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium px-2.5 py-1 bg-gradient-to-r from-white to-[#e4f4fa] text-[#0492C2] rounded-full border border-[#e0eefa]">
+                <span className="text-xs font-medium px-2 py-1 bg-gradient-to-r from-white to-[#e4f4fa] text-[#0492C2] rounded-full border border-[#e0eefa]">
                   All fields required
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Model Name */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-[#03648a] mb-1">Model Name</label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition ${
                     errors.name ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-[#e0eefa] hover:border-[#b6e0fe]'
                   }`}
                   placeholder="Enter model name"
@@ -241,7 +241,7 @@ export default function AddItem() {
                   </button>
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition ${
                     errors.categoryCode ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-[#e0eefa] hover:border-[#b6e0fe]'
                   }`}
                   {...register('categoryCode', { required: 'Category is required' })}
@@ -266,68 +266,16 @@ export default function AddItem() {
                 )}
               </div>
 
-              {/* Retail Price */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#03648a] mb-1">Retail Price</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8c8d]">Rs.</span>
-                  <input
-                    type="number"
-                    className={`w-full px-4 py-3 pl-10 border rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition ${
-                      errors.retailPrice ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-[#e0eefa] hover:border-[#b6e0fe]'
-                    }`}
-                    placeholder="0.00"
-                    step="0.01"
-                    {...register('retailPrice', {
-                      required: 'Retail Price is required',
-                      min: { value: 0, message: 'Must be positive' }
-                    })}
-                  />
-                </div>
-                {errors.retailPrice && (
-                  <p className="text-red-500 text-sm mt-1 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {errors.retailPrice.message}
-                  </p>
-                )}
-              </div>
+              
 
-              {/* Cost Price */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#03648a] mb-1">Cost Price</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8c8d]">Rs.</span>
-                  <input
-                    type="number"
-                    className={`w-full px-4 py-3 pl-10 border rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition ${
-                      errors.costPrice ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-[#e0eefa] hover:border-[#b6e0fe]'
-                    }`}
-                    placeholder="0.00"
-                    step="0.01"
-                    {...register('costPrice', {
-                      required: 'Cost Price is required',
-                      min: { value: 0, message: 'Must be positive' }
-                    })}
-                  />
-                </div>
-                {errors.costPrice && (
-                  <p className="text-red-500 text-sm mt-1 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    {errors.costPrice.message}
-                  </p>
-                )}
-              </div>
+             
 
               {/* Model */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-[#03648a] mb-1">Model</label>
                 <input
                   type="text"
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition ${
                     errors.model ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-[#e0eefa] hover:border-[#b6e0fe]'
                   }`}
                   placeholder="Enter model number"
@@ -343,11 +291,32 @@ export default function AddItem() {
                 )}
               </div>
 
+              {/* Barcode */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[#03648a] mb-1">Barcode</label>
+                <input
+                  type="text"
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition ${
+                    errors.barcode ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : 'border-[#e0eefa] hover:border-[#b6e0fe]'
+                  }`}
+                  placeholder="Enter barcode number"
+                  {...register('barcode')}
+                />
+                {errors.barcode && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.barcode.message}
+                  </p>
+                )}
+              </div>
+
               {/* Description */}
               <div className="space-y-2 md:col-span-2">
                 <label className="block text-sm font-medium text-[#03648a] mb-1">Description</label>
                 <textarea
-                  className={`w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition hover:border-[#b6e0fe] ${
+                  className={`w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe] ${
                     errors.description ? 'border-red-300 ring-2 ring-red-100 bg-red-50' : ''
                   }`}
                   placeholder="Enter item description"
@@ -359,11 +328,11 @@ export default function AddItem() {
           </div>
 
           {/* Inventory Section */}
-          <div className="bg-white/80 backdrop-blur-sm p-6 space-y-6 rounded-2xl shadow-lg border border-[#e0eefa] transition-all hover:shadow-xl">
-            <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#e0eefa]">
+          <div className="bg-white/80 backdrop-blur-sm p-5 space-y-5 rounded-xl shadow border border-[#e0eefa] transition-all hover:shadow-lg">
+            <div className="flex flex-wrap items-center justify-between pb-2 border-b border-[#e0eefa]">
               <h2 className="text-xl font-bold text-[#03648a] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -384,12 +353,12 @@ export default function AddItem() {
             </div>
 
             {trackStock && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-[#03648a] mb-1">In stock</label>
                   <input
                     type="number"
-                    className="w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition hover:border-[#b6e0fe]"
+                    className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe]"
                     placeholder="Enter quantity"
                     {...register('inStock', {
                       required: trackStock ? 'In stock quantity required' : false,
@@ -409,7 +378,7 @@ export default function AddItem() {
                   <label className="block text-sm font-medium text-[#03648a] mb-1">Low stock alert</label>
                   <input
                     type="number"
-                    className="w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition hover:border-[#b6e0fe]"
+                    className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe]"
                     placeholder="Enter minimum quantity"
                     {...register('lowStockAlert', {
                       required: trackStock ? 'Low stock alert required' : false,
@@ -430,10 +399,10 @@ export default function AddItem() {
           </div>
 
           {/* Image Upload Section */}
-          <div className="bg-white/80 backdrop-blur-sm p-6 space-y-6 rounded-2xl shadow-lg border border-[#e0eefa] transition-all hover:shadow-xl">
+          <div className="bg-white/80 backdrop-blur-sm p-5 space-y-5 rounded-xl shadow border border-[#e0eefa] transition-all hover:shadow-lg">
             <h2 className="text-xl font-bold text-[#03648a] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -442,7 +411,7 @@ export default function AddItem() {
               </span>
             </h2>
             <div 
-              className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 ${
+              className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${
                 imagePreview ? 'border-[#b6e0fe] bg-[#f0f9ff]/50' : 'border-[#e0eefa] hover:border-[#b6e0fe] bg-[#f8fbff]/50 hover:bg-[#f0f9ff]/50'
               }`}
             >
@@ -456,14 +425,14 @@ export default function AddItem() {
               />
               <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center justify-center">
                 {imagePreview ? (
-                  <div className="relative w-56 h-56 mx-auto overflow-hidden rounded-xl shadow-lg border border-[#e0eefa]">
+                  <div className="relative w-48 h-48 mx-auto overflow-hidden rounded-lg shadow border border-[#e0eefa]">
                     <img
                       src={imagePreview}
                       alt="Preview"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-20 flex flex-col items-center justify-center rounded-xl opacity-0 hover:opacity-100 transition-opacity">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white mb-2" viewBox="0 0 20 20" fill="currentColor">
+                    <div className="absolute inset-0 bg-black bg-opacity-20 flex flex-col items-center justify-center rounded-lg opacity-0 hover:opacity-100 transition-opacity">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white mb-2" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
                       </svg>
                       <span className="text-white font-medium">Change Image</span>
@@ -471,8 +440,8 @@ export default function AddItem() {
                   </div>
                 ) : (
                   <>
-                    <div className="w-20 h-20 bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                      <PlusIcon className="w-10 h-10 text-white" />
+                    <div className="w-16 h-16 bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 rounded-lg flex items-center justify-center mx-auto mb-3 shadow">
+                      <PlusIcon className="w-8 h-8 text-white" />
                     </div>
                     <div className="mb-3">
                       <p className="text-sm text-[#7f8c8d] font-medium">Click to upload or drag and drop</p>
@@ -480,7 +449,7 @@ export default function AddItem() {
                     </div>
                     <button 
                       type="button"
-                      className="px-4 py-2 bg-white/80 backdrop-blur-sm border border-[#e0eefa] rounded-xl text-[#0492C2] font-medium hover:bg-[#e4f4fa] hover:border-[#b6e0fe] transition"
+                      className="px-4 py-2 bg-white/80 backdrop-blur-sm border border-[#e0eefa] rounded-lg text-[#0492C2] font-medium hover:bg-[#e4f4fa] hover:border-[#b6e0fe] transition"
                     >
                       Browse Files
                     </button>
@@ -499,12 +468,12 @@ export default function AddItem() {
           </div>
 
           {/* Variants Section */}
-          <div className="bg-white/80 backdrop-blur-sm p-6 space-y-6 rounded-2xl shadow-lg border border-[#e0eefa] transition-all hover:shadow-xl">
-            <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#e0eefa]">
+          <div className="bg-white/80 backdrop-blur-sm p-5 space-y-5 rounded-xl shadow border border-[#e0eefa] transition-all hover:shadow-lg">
+            <div className="flex flex-wrap items-center justify-between pb-2 border-b border-[#e0eefa]">
               <h2 className="text-xl font-bold text-[#03648a] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 3a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                   </svg>
                 </div>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0492C2] to-[#b6e0fe]">
@@ -524,12 +493,12 @@ export default function AddItem() {
             </div>
 
             {variantsEnabled && (
-              <div className="space-y-4 bg-[#f0f9ff]/50 p-4 rounded-xl border border-[#e0eefa]">
+              <div className="space-y-4 bg-[#f0f9ff]/50 p-4 rounded-lg border border-[#e0eefa]">
                 <div>
                   <label className="block text-sm font-medium text-[#03648a] mb-2">
                     Select Variant Type
                   </label>
-                  <select className="w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition hover:border-[#b6e0fe]">
+                  <select className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe]">
                     <option value="" disabled>
                       Choose a variant type
                     </option>
@@ -547,7 +516,7 @@ export default function AddItem() {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition hover:border-[#b6e0fe]"
+                    className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe]"
                     placeholder="e.g., Black, White, Blue"
                   />
                 </div>
@@ -559,7 +528,7 @@ export default function AddItem() {
                   <input
                     type="number"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition hover:border-[#b6e0fe]"
+                    className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe]"
                     placeholder="e.g., 50.00"
                   />
                   <p className="text-xs text-[#95a5a6] mt-2">
@@ -574,9 +543,9 @@ export default function AddItem() {
         {/* Add Category Modal */}
         {showCategoryModal && (
           <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
-            <div className="bg-white/90 backdrop-blur-lg rounded-2xl p-6 w-96 max-w-full border border-[#e0eefa] shadow-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-[#03648a]">Add Category</h3>
+            <div className="bg-white/90 backdrop-blur-lg rounded-xl p-5 w-96 max-w-full border border-[#e0eefa] shadow-xl">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-[#03648a]">Add Category</h3>
                 <button 
                   onClick={() => {
                     setShowCategoryModal(false);
@@ -584,14 +553,14 @@ export default function AddItem() {
                   }}
                   className="text-[#95a5a6] hover:text-[#7f8c8d]"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
               <input
                 type="text"
-                className="w-full px-4 py-3 border border-[#e0eefa] rounded-xl focus:ring-2 focus:ring-[#b6e0fe] focus:border-transparent transition mb-4"
+                className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition mb-3"
                 placeholder="Category name"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
@@ -601,7 +570,7 @@ export default function AddItem() {
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
-                  className="px-4 py-2.5 text-[#03648a] font-medium rounded-xl border border-[#e0eefa] bg-white/80 backdrop-blur-sm hover:bg-[#e4f4fa] transition"
+                  className="px-4 py-2 text-[#03648a] font-medium rounded-lg border border-[#e0eefa] bg-white/80 backdrop-blur-sm hover:bg-[#e4f4fa] transition"
                   onClick={() => {
                     setShowCategoryModal(false);
                     setNewCategory('');
@@ -611,11 +580,11 @@ export default function AddItem() {
                 </button>
                 <button
                   type="button"
-                  className="px-4 py-2.5 bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 text-white font-bold rounded-xl shadow hover:shadow-md transition flex items-center gap-2 disabled:opacity-70"
+                  className="px-4 py-2.5 bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 text-white font-bold rounded-lg shadow hover:shadow-md transition flex items-center gap-2 disabled:opacity-70"
                   onClick={handleAddCategory}
                   disabled={!newCategory.trim()}
                 >
-                  <PlusIcon className="w-5 h-5 text-white" />
+                  <PlusIcon className="w-4 h-4 text-white" />
                   Add
                 </button>
               </div>

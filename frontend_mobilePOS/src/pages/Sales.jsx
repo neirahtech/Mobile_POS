@@ -1,119 +1,69 @@
 import { useState } from 'react';
-import { ChartBarIcon, CurrencyDollarIcon, ShoppingBagIcon, UsersIcon } from '@heroicons/react/24/outline';
-
-const salesData = {
-  daily: 15000,
-  weekly: 85000,
-  monthly: 350000,
-  totalOrders: 125,
-  totalCustomers: 45
-};
-
-const recentTransactions = [
-  { id: 1, customer: 'John Doe', amount: 950.00, items: 3, time: '15:30' },
-  { id: 2, customer: 'Jane Smith', amount: 630.00, items: 2, time: '14:45' },
-  // Add more transactions as needed
-];
+import SalesAnalytics from '../components/SalesAnalytics';
+import SalesDetails from '../components/SalesDetails';
+import { ChartBarIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 export default function Sales() {
-  const [timeRange, setTimeRange] = useState('Today');
+  const [activeTab, setActiveTab] = useState('details');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-gray-800">Sales Analytics</h1>
-        <select 
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          className="input-field w-full sm:w-40"
-        >
-          <option>Today</option>
-          <option>This Week</option>
-          <option>This Month</option>
-          <option>This Year</option>
-        </select>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Daily Sales Card */}
-        <div className="card p-6 border-2 border-[#0492C2]">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Daily Sales</p>
-              <h3 className="text-2xl font-semibold mt-1">LKR {salesData.daily.toLocaleString()}</h3>
-            </div>
-            <div className="p-3 bg-[#E6F4F9] rounded-full">
-              <CurrencyDollarIcon className="w-6 h-6 text-[#0492C2]" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-sm text-green-600">+12% from yesterday</div>
-          </div>
+    <div className="w-full flex flex-col items-center min-h-[calc(100vh-60px)] bg-gradient-to-br from-[#e4f4fa] to-[#f8fbff] py-8 px-2 gap-8">
+      <div className="w-full max-w-6xl bg-white/90 rounded-2xl shadow-2xl border border-[#b6e0fe] p-6 relative animate-fadein mb-4">
+        {/* Rectangle Heading */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-[#0492C2] tracking-wide flex items-center gap-2">
+            <span>Sales</span>
+            <span className="block w-12 md:w-16 h-1 rounded bg-gradient-to-r from-[#0492C2] to-[#b6e0fe]"></span>
+          </h1>
         </div>
-
-        {/* Total Orders Card */}
-        <div className="card p-6 border-2 border-[#0492C2]">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Orders</p>
-              <h3 className="text-2xl font-semibold mt-1">{salesData.totalOrders}</h3>
-            </div>
-            <div className="p-3 bg-[#E6F4F9] rounded-full">
-              <ShoppingBagIcon className="w-6 h-6 text-[#0492C2]" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-sm text-green-600">+5% from last week</div>
-          </div>
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
+              activeTab === 'details'
+                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
+                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
+            }`}
+            onClick={() => setActiveTab('details')}
+          >
+            <ClipboardDocumentListIcon className="w-4 h-4" />
+            Sales Details
+          </button>
+          <button
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
+              activeTab === 'analytics'
+                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
+                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
+            }`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            <ChartBarIcon className="w-4 h-4" />
+            Sales Analytics
+          </button>
         </div>
-
-        {/* Total Customers Card */}
-        <div className="card p-6 border-2 border-[#0492C2]">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Customers</p>
-              <h3 className="text-2xl font-semibold mt-1">{salesData.totalCustomers}</h3>
+        {/* Tab Content */}
+        <div className="p-0">
+          {activeTab === 'analytics' && (
+            <div className="rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8 p-6">
+              <SalesAnalytics />
             </div>
-            <div className="p-3 bg-[#E6F4F9] rounded-full">
-              <UsersIcon className="w-6 h-6 text-[#0492C2]" />
+          )}
+          {activeTab === 'details' && (
+            <div className="rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8 p-6">
+              <SalesDetails />
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-sm text-green-600">+8% new customers</div>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Recent Transactions */}
-      <div className="card p-6 border-2 border-[#E6F4F9]">
-        <h2 className="text-lg font-semibold mb-4">Recent Transactions</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">ID</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Customer</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Amount</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Items</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTransactions.map((transaction) => (
-                <tr key={transaction.id} className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-sm">#{transaction.id}</td>
-                  <td className="py-3 px-4 text-sm">{transaction.customer}</td>
-                  <td className="py-3 px-4 text-sm">LKR {transaction.amount.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-sm">{transaction.items}</td>
-                  <td className="py-3 px-4 text-sm">{transaction.time}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <style>{`
+        .animate-fadein {
+          animation: fadein 0.7s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes fadein {
+          from { opacity: 0; transform: translateY(24px);}
+          to { opacity: 1; transform: translateY(0);}
+        }
+      `}</style>
     </div>
   );
-} 
+}

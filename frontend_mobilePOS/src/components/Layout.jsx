@@ -10,19 +10,15 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden relative layout-bg">
-      {/* Animated Floating Elements */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="floating-shape floating-shape-1" />
-      </div>
       {/* Mobile menu button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-md"
+        className="lg:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-md border border-[#0492C2]/20 hover:border-[#0492C2]/40 transition-all duration-300"
       >
         {isMobileMenuOpen ? (
-          <XMarkIcon className="w-6 h-6" />
+          <XMarkIcon className="w-6 h-6 text-[#0492C2]" />
         ) : (
-          <Bars3Icon className="w-6 h-6" />
+          <Bars3Icon className="w-6 h-6 text-[#0492C2]" />
         )}
       </button>
 
@@ -52,35 +48,20 @@ export default function Layout() {
             ${isHomePage ? 'mt-14 lg:mt-0' : 'mt-14 lg:mt-0'}
             ${!isHomePage ? 'max-w-full' : ''}
             animate-fadein
-            bg-gradient-to-br from-[#e4f4fa] via-white to-[#b6e0fe]
-            rounded-lg shadow-lg
+            bg-gradient-to-br from-white via-[#f8fbff] to-[#e4f4fa]
+            rounded-2xl shadow-2xl
             home-main-3d
-          `} style={{backdropFilter: 'blur(2px)', margin: '12px'}}>
+            border border-[#0492C2]/10
+            backdrop-blur-sm
+          `} style={{margin: '12px'}}>
             <Outlet />
           </div>
         </div>
       </main>
-      {/* Floating Shapes CSS and Layout Background */}
+      {/* Layout Background */}
       <style>{`
         .layout-bg {
-          background: linear-gradient(120deg, #e4f4fa 0%, #f8fbff 100%);
-        }
-        .floating-shape {
-          position: absolute;
-          border-radius: 50%;
-          opacity: 0.15;
-          filter: blur(2px);
-          animation: float 8s ease-in-out infinite alternate;
-        }
-        .floating-shape-1 {
-          width: 150px; height: 150px;
-          background: linear-gradient(135deg, #0492C2 60%, #e4f4fa 100%);
-          top: 5%; left: 5%;
-          animation-delay: 0s;
-        }
-        @keyframes float {
-          0% { transform: translateY(0) scale(1);}
-          100% { transform: translateY(-20px) scale(1.05);}
+          background: linear-gradient(135deg, #ffffff 0%, #f8fbff 50%, #e4f4fa 100%);
         }
         .animate-fadein {
           animation: fadein 0.8s cubic-bezier(0.4,0,0.2,1);
@@ -90,17 +71,30 @@ export default function Layout() {
           to { opacity: 1; transform: translateY(0);}
         }
         .home-main-3d {
-          box-shadow: 0 4px 24px 0 rgba(4,146,194,0.1), 0 1px 0 0 #b6e0fe;
-          transition: box-shadow 0.3s cubic-bezier(.4,0,.2,1), transform 0.3s cubic-bezier(.4,0,.2,1);
+          box-shadow: 
+            0 20px 40px rgba(4,146,194,0.08),
+            0 8px 16px rgba(4,146,194,0.06),
+            0 0 0 1px rgba(4,146,194,0.05);
+          transition: all 0.3s cubic-bezier(.4,0,.2,1);
           animation: homePopIn 0.6s cubic-bezier(.4,0,.2,1);
         }
         .home-main-3d:hover {
-          box-shadow: 0 8px 32px 0 rgba(4,146,194,0.15), 0 2px 16px 0 #b6e0fe33;
-          transform: translateY(-2px) scale(1.005) perspective(800px) rotateX(1deg);
+          box-shadow: 
+            0 25px 50px rgba(4,146,194,0.12),
+            0 12px 24px rgba(4,146,194,0.08),
+            0 0 0 1px rgba(4,146,194,0.1);
+          transform: translateY(-2px) scale(1.005);
         }
         @keyframes homePopIn {
           from { opacity: 0; transform: scale(0.98) translateY(24px);}
           to { opacity: 1; transform: scale(1) translateY(0);}
+        }
+        @keyframes borderGlow {
+          0%, 100% { border-color: rgba(4,146,194,0.1); }
+          50% { border-color: rgba(4,146,194,0.3); }
+        }
+        .border-glow {
+          animation: borderGlow 3s ease-in-out infinite;
         }
       `}</style>
     </div>

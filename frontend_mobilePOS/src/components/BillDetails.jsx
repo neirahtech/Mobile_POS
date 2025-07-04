@@ -6,8 +6,9 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { BsCashStack, BsCreditCard2FrontFill, BsQrCode } from 'react-icons/bs';
-import BillReceipt from './BillReceipt';
+
 import { toast } from 'react-toastify';
+import BillReceipt from './BillReceipt'; // (Make sure this import exists or is correct)
 
 export default function BillDetails({
   cart = [],
@@ -21,6 +22,8 @@ export default function BillDetails({
   const [showReceipt, setShowReceipt] = useState(false);
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paidAmount, setPaidAmount] = useState('');
+  const [futureCredit, setFutureCredit] = useState(0);
   
   // Fixed tax rate of 18%
   const taxRate = 0.18;
@@ -74,9 +77,30 @@ export default function BillDetails({
       toast.error('Please enter customer name');
       return;
     }
+    const paid = parseFloat(paidAmount);
+    if (isNaN(paid) || paid < 0) {
+      toast.error('Please enter a valid paid amount');
+      return;
+    }
+    if (paid < total) {
+      toast.error('Paid amount is less than total. Please collect full payment.');
+      return;
+    }
 
     setIsProcessing(true);
     try {
+      let credit = 0;
+      if (paid > total) {
+        credit = paid - total;
+        setFutureCredit(credit);
+        toast.info(`Extra LKR ${credit.toFixed(2)} will be kept for future purchases.`, {
+          position: 'bottom-right',
+          className: 'bg-[#0492C2] text-white'
+        });
+      } else {
+        setFutureCredit(0);
+      }
+
       const orderData = {
         customerName: customerName.trim(),
         items: cart,
@@ -91,6 +115,8 @@ export default function BillDetails({
           amount: tax
         },
         total,
+        paidAmount: paid,
+        futureCredit: credit,
         paymentMethod,
         orderDate: new Date().toISOString()
       };
@@ -116,6 +142,10 @@ export default function BillDetails({
 
   const handlePrint = () => {
     setShowReceipt(true);
+    setTimeout(() => {
+      window.print();
+      setShowReceipt(false); // Auto-close after print dialog
+    }, 100);
   };
 
   const handleCancel = () => {
@@ -165,104 +195,105 @@ export default function BillDetails({
           </div>
         </div>
 
-        {/* Scrollable Cart Items Section */}
-        <div className="flex-grow mb-2 relative z-10" style={{ minHeight: '80px', maxHeight: '120px' }}>
-          {cart.length === 0 ? (
-            <div className="text-center py-6 text-gray-500 animate-fade-in h-full flex flex-col justify-center border-2 border-[#b6e0fe] rounded-lg bg-white/90">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto mb-2 opacity-50" viewBox="0 0 24 24">
-                <path fill="#0492C2" d="M17 18c-1.11 0-2 .89-2 2a2 2 0 0 0 2 2a2 2 0 0 0 2-2a2 2 0 0 0-2-2M1 2v2h2l3.6 7.59l-1.36 2.45c-.15.28-.24.61-.24.96a2 2 0 0 0 2 2h12v-2H7.42a.25.25 0 0 1-.25-.25c0-.05.01-.09.03-.12L8.1 13h7.45c.75 0 1.41-.42 1.75-1.03l3.58-6.47c.07-.16.12-.33.12-.5a1 1 0 0 0-1-1H5.21l-.94-2M7 18c-1.11 0-2 .89-2 2a2 2 0 0 0 2 2a2 2 0 0 0 2-2a2 2 0 0 0-2-2Z"/>
-              </svg>
-              <p className="text-xs font-medium">Your cart is empty</p>
-            </div>
-          ) : (
-            <div className="bg-white/90 rounded-lg border-2 border-[#b6e0fe] overflow-hidden h-full">
-              <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: '100px' }}>
-                <table className="w-full">
-                  <thead className="bg-[#e4f4fa] sticky top-0 z-10">
-                    <tr>
-                      <th className="py-0.5 px-0.5 text-center text-[9px] font-semibold text-[#0492C2] uppercase w-[10%]">#</th>
-                      <th className="py-0.5 px-0.5 text-left text-[9px] font-semibold text-[#0492C2] uppercase w-[35%]">Item</th>
-                      <th className="py-0.5 px-0.5 text-center text-[9px] font-semibold text-[#0492C2] uppercase w-[25%]">Qty</th>
-                      <th className="py-0.5 px-0.5 text-right text-[9px] font-semibold text-[#0492C2] uppercase w-[15%]">Price</th>
-                      <th className="py-0.5 px-0.5 text-right text-[9px] font-semibold text-[#0492C2] uppercase w-[15%]">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cart.map((item, index) => (
-                      <tr 
-                        key={`${item.id}-${index}`}
-                        className="border-t border-[#b6e0fe] hover:bg-[#f0f9ff] group"
-                      >
-                        <td className="py-0.5 px-0.5 text-center align-middle relative">
-                          <button
-                            onClick={() => removeFromCart(index)}
-                            className="w-full h-full flex items-center justify-center transition-all duration-200"
-                            title="Remove item"
-                          >
-                            <span className="text-[10px] font-medium text-gray-700 group-hover:opacity-0 transition-opacity">
-                              {index + 1}
-                            </span>
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 fill-red-600 group-hover:fill-red-500 transition-colors duration-200">
-                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" 
-                                      style={{filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))"}} />
-                              </svg>
-                            </div>
-                          </button>
-                        </td>
-                        <td className="py-0.5 px-0.5 text-[10px] font-semibold text-gray-800 align-middle truncate">{item.name}</td>
-                        <td className="py-0.5 px-0.5 align-middle">
-                          <div className="flex items-center justify-center gap-0.5">
-                            <button
-                              onClick={() => handleQuantityChange(index, -1)}
-                              className="p-0.5 rounded bg-white border border-gray-300 hover:bg-[#e4f4fa] text-[#0492C2] disabled:opacity-30"
-                              disabled={item.qty <= 1}
-                              title="Decrease quantity"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 fill-current">
-                                <path d="M19 13H5v-2h14v2z" 
-                                      style={{filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))"}} />
-                              </svg>
-                            </button>
-                            <span className="text-[10px] font-bold w-4 text-center text-[#0492C2]">
-                              {item.qty}
-                            </span>
-                            <button
-                              onClick={() => handleQuantityChange(index, 1)}
-                              className="p-0.5 rounded bg-white border border-gray-300 hover:bg-[#e4f4fa] text-[#0492C2]"
-                              title="Increase quantity"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 fill-current">
-                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" 
-                                      style={{filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))"}} />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-0.5 px-0.5 text-right text-[10px] text-[#0492C2] font-semibold align-middle">
-                          LKR {item.price.toFixed(2)}
-                        </td>
-                        <td className="py-0.5 px-0.5 text-right text-[10px] font-bold text-[#0492C2] align-middle">
-                          LKR {(item.price * item.qty).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-[#e4f4fa] font-bold">
-                      <td colSpan="3" className="py-0.5 px-0.5 text-right text-[10px] text-[#0492C2]">
-                        Subtotal
-                      </td>
-                      <td colSpan="2" className="py-0.5 px-0.5 text-right text-[10px] text-[#0492C2]">
-                        LKR {subtotal.toFixed(2)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
+       {/* Scrollable Cart Items Section */}
+{/* Scrollable Cart Items Section */}
+<div className="flex-grow mb-2 relative z-10" style={{ minHeight: '80px', maxHeight: '120px' }}>
+  {cart.length === 0 ? (
+    <div className="text-center py-6 text-gray-500 animate-fade-in h-full flex flex-col justify-center border-2 border-[#b6e0fe] rounded-lg bg-white/90">
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto mb-2 opacity-50" viewBox="0 0 24 24">
+        <path fill="#0492C2" d="M17 18c-1.11 0-2 .89-2 2a2 2 0 0 0 2 2a2 2 0 0 0 2-2a2 2 0 0 0-2-2M1 2v2h2l3.6 7.59l-1.36 2.45c-.15.28-.24.61-.24.96a2 2 0 0 0 2 2h12v-2H7.42a.25.25 0 0 1-.25-.25c0-.05.01-.09.03-.12L8.1 13h7.45c.75 0 1.41-.42 1.75-1.03l3.58-6.47c.07-.16.12-.33.12-.5a1 1 0 0 0-1-1H5.21l-.94-2M7 18c-1.11 0-2 .89-2 2a2 2 0 0 0 2 2a2 2 0 0 0 2-2a2 2 0 0 0-2-2Z"/>
+      </svg>
+      <p className="text-xs font-medium">Your cart is empty</p>
+    </div>
+  ) : (
+    <div className="bg-white/90 rounded-lg border-2 border-[#b6e0fe] overflow-hidden h-full">
+      <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: '100px' }}>
+        <table className="w-full">
+          <thead className="bg-[#e4f4fa] sticky top-0 z-10">
+            <tr>
+              <th className="py-1 px-1 text-center text-[9px] font-semibold text-[#0492C2] uppercase w-[8%]">#</th>
+              <th className="py-1 px-1 text-left text-[9px] font-semibold text-[#0492C2] uppercase w-[35%]">Item</th>
+              <th className="py-1 px-1 text-center text-[9px] font-semibold text-[#0492C2] uppercase w-[20%]">Qty</th>
+              <th className="py-1 px-1 text-right text-[9px] font-semibold text-[#0492C2] uppercase w-[18%]">Price</th>
+              <th className="py-1 px-1 text-right text-[9px] font-semibold text-[#0492C2] uppercase w-[19%]">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cart.map((item, index) => (
+              <tr 
+                key={`${item.id}-${index}`}
+                className="border-t border-[#b6e0fe]/50 hover:bg-[#f0f9ff] group"
+              >
+                <td className="py-1 px-1 text-center align-middle relative">
+                  <button
+                    onClick={() => removeFromCart(index)}
+                    className="w-full h-full flex items-center justify-center transition-all duration-200"
+                    title="Remove item"
+                  >
+                    <span className="text-[9px] font-medium text-gray-700 group-hover:opacity-0 transition-opacity">
+                      {index + 1}
+                    </span>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 fill-red-600 group-hover:fill-red-500 transition-colors duration-200">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" 
+                              style={{filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))"}} />
+                      </svg>
+                    </div>
+                  </button>
+                </td>
+                <td className="py-1 px-1 text-[9px] font-semibold text-gray-800 align-middle truncate">{item.name}</td>
+                <td className="py-1 px-1 align-middle">
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      onClick={() => handleQuantityChange(index, -1)}
+                      className="p-0.5 rounded bg-white border border-gray-300 hover:bg-[#e4f4fa] text-[#0492C2] disabled:opacity-30"
+                      disabled={item.qty <= 1}
+                      title="Decrease quantity"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 fill-current">
+                        <path d="M19 13H5v-2h14v2z" 
+                              style={{filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))"}} />
+                      </svg>
+                    </button>
+                    <span className="text-[9px] font-bold w-4 text-center text-[#0492C2]">
+                      {item.qty}
+                    </span>
+                    <button
+                      onClick={() => handleQuantityChange(index, 1)}
+                      className="p-0.5 rounded bg-white border border-gray-300 hover:bg-[#e4f4fa] text-[#0492C2]"
+                      title="Increase quantity"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3 h-3 fill-current">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" 
+                              style={{filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))"}} />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+                <td className="py-1 px-1 text-right text-[9px] text-[#0492C2] font-semibold align-middle">
+                  LKR {item.price.toFixed(2)}
+                </td>
+                <td className="py-1 px-1 text-right text-[9px] font-bold text-[#0492C2] align-middle">
+                  LKR {(item.price * item.qty).toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-[#e4f4fa] font-bold">
+              <td colSpan="3" className="py-1 px-1 text-right text-[9px] text-[#0492C2]">
+                Subtotal
+              </td>
+              <td colSpan="2" className="py-1 px-1 text-right text-[9px] text-[#0492C2]">
+                LKR {subtotal.toFixed(2)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  )}
+</div>
 
         {/* Fixed Bottom Section */}
         <div className="flex-none">
@@ -353,6 +384,31 @@ export default function BillDetails({
               <span>Total</span>
               <span>LKR {total.toFixed(2)}</span>
             </div>
+            {/* Paid Amount Input */}
+            <div className="flex justify-between items-center mt-2">
+              <label className="font-medium text-[#0492C2]">Paid Amount</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={paidAmount}
+                onChange={e => setPaidAmount(e.target.value)}
+                placeholder="Enter paid amount"
+                className="w-28 px-2 py-1 border border-[#b6e0fe] rounded-lg text-[11px] text-right focus:ring-1 focus:ring-[#0492C2] focus:border-[#0492C2] transition"
+                style={{ fontSize: '9px' }}
+              />
+            </div>
+            {/* Show info if paid is less or more */}
+            {paidAmount && parseFloat(paidAmount) < total && (
+              <div className="text-xs text-red-500 mt-1 font-semibold">
+                Paid amount is less than total. Please collect full payment.
+              </div>
+            )}
+            {paidAmount && parseFloat(paidAmount) > total && (
+              <div className="text-xs text-[#0492C2] mt-1 font-semibold">
+                Extra LKR {(parseFloat(paidAmount) - total).toFixed(2)} will be kept for future purchases.
+              </div>
+            )}
           </div>
 
           {/* Action Buttons with enhanced 3D styling */}
@@ -389,6 +445,7 @@ export default function BillDetails({
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-md'
                   : 'bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] text-[#0492C2] shadow-lg hover:shadow-xl active:translate-y-0'
               }`}
+              type="button"
             >
               <span className="flex items-center justify-center">
                 <PrinterIcon className="w-4 h-4 mr-1 drop-shadow-lg" />
@@ -415,27 +472,53 @@ export default function BillDetails({
 
       {/* Receipt Modal */}
       {showReceipt && (
-        <BillReceipt
-          order={{
-            id: Math.floor(Math.random() * 10000),
-            customerName,
-            cart,
-            date: new Date(),
-            paymentMethod,
-            subtotal,
-            discount: {
-              type: 'percentage',
-              value: discountPercentage,
-              amount: discountAmount
-            },
-            tax: {
-              rate: taxRate,
-              amount: tax
-            },
-            total
-          }}
-          onClose={() => setShowReceipt(false)}
-        />
+        <div>
+          <BillReceipt
+            order={{
+              id: Math.floor(Math.random() * 10000),
+              customerName,
+              cart,
+              date: new Date(),
+              paymentMethod,
+              subtotal,
+              discount: {
+                type: 'percentage',
+                value: discountPercentage,
+                amount: discountAmount
+              },
+              tax: {
+                rate: taxRate,
+                amount: tax
+              },
+              total,
+              paidAmount: parseFloat(paidAmount) || 0,
+              futureCredit
+            }}
+            onClose={() => setShowReceipt(false)}
+            printMode={true}
+          />
+          {/* Overlay for print mode to ensure visibility */}
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              .print-receipt, .print-receipt * {
+                visibility: visible !important;
+              }
+              .print-receipt {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                background: white !important;
+                box-shadow: none !important;
+                z-index: 99999 !important;
+              }
+            }
+          `}</style>
+        </div>
       )}
 
       {/* Enhanced Styles */}
