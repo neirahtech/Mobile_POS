@@ -17,7 +17,10 @@ const supplierRoutes = require('./routes/supplierRoutes');
 const purchaseOrderRoutes = require('./routes/purchaseOrderRoutes');
 const purchaseReturnRoutes = require('./routes/purchaseReturnRoutes');
 const debtorStatementRoutes = require('./routes/debtorStatementRoutes');
-
+const storeRoutes = require('./routes/storeRoutes');
+const branchRoutes = require('./routes/branchRoutes'); // <-- add this
+const userRoutes = require('./routes/userRoutes');
+const billingSettingsRoutes = require('./routes/billingSettingsRoutes'); // <-- add this
 
 const app = express();
 
@@ -29,15 +32,27 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Middleware
 app.use(cors());
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Register expense routes BEFORE body parsers (for multer)
-app.use('/api/expenses', expenseRoutes);
-// Move express.json() and express.urlencoded() BEFORE all other routes!
+// Serve uploaded files - this must come before body parsers
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, path) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
+
+// Parse JSON and urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logger
+app.use((req, res, next) => {
+  console.log(`[${req.method}] ${req.originalUrl}`);
+  next();
+});
+app.use('/api', storeRoutes);
+app.use('/api', branchRoutes); // <-- add this
+// Register expense routes BEFORE body parsers (for multer)
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/pay-in-terms', payInTermsRoutes);
@@ -55,6 +70,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/grn', grnRoutes); // <-- FIXED: added leading slash
 
 app.use('/api', salesRoutes);
+app.use('/api', userRoutes);
+app.use('/api', billingSettingsRoutes); // <-- add this after other routes
 
 const itemsRouter = require('./routes/items');
 app.use('/', itemsRouter);
@@ -70,9 +87,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

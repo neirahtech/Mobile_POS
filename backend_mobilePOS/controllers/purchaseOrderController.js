@@ -3,13 +3,13 @@ const db = require('../db');
 // Create purchase order
 exports.createPurchaseOrder = async (req, res) => {
   try {
-    const { orderNo, supplier, date, status, amount } = req.body;
-    if (!orderNo || !supplier || !date || !status || !amount) {
+    const { orderNo, supplier, date, status, amount, branch_id } = req.body;
+    if (!orderNo || !supplier || !date || !status || !amount || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO purchase_orders (orderNo, supplier, date, status, amount) VALUES (?, ?, ?, ?, ?)',
-      [orderNo, supplier, date, status, amount]
+      'INSERT INTO purchase_orders (orderNo, supplier, date, status, amount, branch_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [orderNo, supplier, date, status, amount, branch_id]
     );
     res.status(201).json({ message: 'Purchase order created' });
   } catch (err) {
@@ -20,7 +20,11 @@ exports.createPurchaseOrder = async (req, res) => {
 // Get all purchase orders
 exports.getAllPurchaseOrders = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM purchase_orders ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM purchase_orders WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching purchase orders', error: err.message });

@@ -7,6 +7,7 @@ import axios from 'axios';
 import api from '../utils/axios';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { TagIcon } from '@heroicons/react/24/solid';
+import { useBranch } from '../context/BranchContext';
 import GRNComponent from '../components/GRNComponent';
 import StockComponent from '../components/StockComponent';
 
@@ -44,6 +45,7 @@ const hardcodedGRNs = [
 
 
 export default function Inventory() {
+  const { selectedBranch } = useBranch();
   const [activeTable, setActiveTable] = useState('items'); // Set default to 'items'
   const [showStockForm, setShowStockForm] = useState(false);
   const [showBarcodeForm, setShowBarcodeForm] = useState(false);
@@ -1093,7 +1095,7 @@ export default function Inventory() {
                           }
                         }}
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#b6e0fe]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#0492C2] peer-checked:to-[#b6e0fe]"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-offset-2 peer-focus:ring-[#b6e0fe]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#0492C2] peer-checked:to-[#b6e0fe]"></div>
                       <span className="ml-3 text-sm font-medium text-[#03648a]">Enable variants</span>
                     </label>
                   </div>
@@ -1434,6 +1436,7 @@ export default function Inventory() {
             setActiveTable={setActiveTable}
             viewGRN={viewGRN}
             setViewGRN={setViewGRN}
+            selectedBranch={selectedBranch}
             // Pass filter props for GRNComponent to implement its own filters
             filtersEnabled={true}
           />

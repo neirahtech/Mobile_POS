@@ -1,10 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useBranch } from '../context/BranchContext';
+import api from '../utils/axios';
 import SalesAnalytics from '../components/SalesAnalytics';
 import SalesDetails from '../components/SalesDetails';
 import { ChartBarIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 export default function Sales() {
+  const { selectedBranchId } = useBranch();
   const [activeTab, setActiveTab] = useState('details');
+  const [sales, setSales] = useState([]);
+
+  useEffect(() => {
+    if (!selectedBranchId) return;
+    api.get('/sales', { params: { branch_id: selectedBranchId } })
+      .then(res => setSales(res.data))
+      .catch(() => setSales([]));
+  }, [selectedBranchId]);
 
   return (
     <div className="w-full flex flex-col items-center min-h-[calc(100vh-60px)] bg-gradient-to-br from-[#e4f4fa] to-[#f8fbff] py-8 px-2 gap-8">
@@ -50,7 +61,7 @@ export default function Sales() {
           )}
           {activeTab === 'details' && (
             <div className="rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8 p-6">
-              <SalesDetails />
+              <SalesDetails sales={sales} />
             </div>
           )}
         </div>

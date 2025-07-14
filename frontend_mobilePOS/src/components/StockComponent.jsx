@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../utils/axios';
+import { useBranch } from '../context/BranchContext';
 
 export default function StockComponent() {
+  const { selectedBranch } = useBranch();
   const [stock, setStock] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,96 +22,86 @@ export default function StockComponent() {
     const fetchStock = async () => {
       setLoading(true);
       try {
-        // Fetch all items with their full details
-        const itemsRes = await api.get('/items');
+        // Get branch_id - use selectedBranch if available, otherwise default to 1
+        const branch_id = selectedBranch?.id || 1;
+        
+        // Fetch all items for the current branch
+        const itemsRes = await api.get('/items', { params: { branch_id } });
         const items = itemsRes.data?.items || [];
 
-        // Fetch GRNs for stock calculations
-        const grnRes = await api.get('/grn');
+        // Fetch all GRNs for the current branch
+        const grnRes = await api.get('/grn', { params: { branch_id } });
         const grns = Array.isArray(grnRes.data) ? grnRes.data : grnRes.data?.grns || [];
 
-        // Build maps for quantities, latest prices, wholesale prices, and discounts from GRNs
-        const qtyMap = {};
-        const priceMap = {};
-        const wholesalePriceMap = {};
-        const discountMap = {};
+        // Create maps for GRN data indexed by item_code
+        const quantityMap = {}; // item_code -> total quantity
+        const latestPriceMap = {}; // item_code -> { retail_price, wholesale_price, invoice_date }
 
-        // Process GRNs in reverse order to get latest prices and discounts
-        [...grns].reverse().forEach(grn => {
-          (grn.items || []).forEach(item => {
-            const code = item.item_code || item.code;
-            qtyMap[code] = (qtyMap[code] || 0) + Number(item.quantity || 0);
+        // Sort GRNs by invoice_date in descending order to get the latest prices
+        const sortedGrns = [...grns].sort((a, b) => 
+          new Date(b.invoice_date) - new Date(a.invoice_date)
+        );
 
-            // Only update price/discount if this GRN is newer (higher ID) than what we have
-            if (!priceMap[code] || grn.id > priceMap[code].grnId) {
-              priceMap[code] = {
-                price: item.retail_price || item.price || 0,
-                grnId: grn.id
-              };
-              wholesalePriceMap[code] = {
-                price: item.wholesale_price || 0,
-                grnId: grn.id
-              };
-              discountMap[code] = {
-                discount: item.sale_discount || 0,
-                grnId: grn.id
-              };
-            }
-          });
-        });
+        // Process all GRN items to build quantity and price maps
+        sortedGrns.forEach(grn => {
+          if (grn.items && Array.isArray(grn.items)) {
+            grn.items.forEach(grnItem => {
+              const itemCode = grnItem.item_code;
+              if (!itemCode) return;
 
-        // Get all unique codes from both GRN and items table
-        const allCodesSet = new Set();
-        grns.forEach(grn => {
-          (grn.items || []).forEach(grnItem => {
-            const code = grnItem.item_code || grnItem.code;
-            allCodesSet.add(code);
-          });
-        });
-        items.forEach(item => {
-          const code = item.item_code || item.model_number || item.code || '';
-          if (code) allCodesSet.add(code);
-        });
-        const allCodes = Array.from(allCodesSet);
+              // Calculate total quantity - sum all quantities from GRN
+              const quantity = Number(grnItem.quantity) || 0;
+              quantityMap[itemCode] = (quantityMap[itemCode] || 0) + quantity;
 
-        // Compose stock list for all codes
-        const stockList = allCodes.map(code => {
-          // Try to find item details from GRN first, then from items table
-          let grnItem = null;
-          for (const grn of grns) {
-            grnItem = (grn.items || []).find(i => (i.item_code || i.code) === code);
-            if (grnItem) break;
+              // Get prices
+              const retailPrice = Number(grnItem.retail_price) || 0;
+              const wholesalePrice = Number(grnItem.wholesale_price) || 0;
+
+              // Only set prices if not already set (since GRNs are sorted by date)
+              if (!latestPriceMap[itemCode]) {
+                latestPriceMap[itemCode] = {
+                  retail_price: retailPrice,
+                  wholesale_price: wholesalePrice,
+                  invoice_date: grn.invoice_date
+                };
+              }
+            });
           }
-          const item = items.find(i => (i.item_code || i.model_number || i.code) === code) || {};
+        });
 
-          // Prefer GRN name/image/category if available, else fallback to items table
-          const name = grnItem?.item_name || grnItem?.name || item.name || item.item_name || code;
+        // Build stock data by combining items with GRN data
+        const stockData = items.map(item => {
+          // Use model_number as the item code to match with GRN
+          const itemCode = item.model_number;
+          
+          // Get GRN data for this item
+          const quantity = quantityMap[itemCode] || 0;
+          const priceData = latestPriceMap[itemCode] || { retail_price: 0, wholesale_price: 0 };
+
+          // Build image URL
           let imageUrl = '';
-          if (grnItem?.image_url) imageUrl = grnItem.image_url;
-          else if (item.image_url) imageUrl = item.image_url;
-          else if (item.image) {
+          if (item.image) {
             imageUrl = item.image.startsWith('http')
               ? item.image
               : `${api.defaults.baseURL.replace('/api', '')}/uploads/${item.image}`;
           }
-          const category = grnItem?.category || grnItem?.category_name || item.category || item.category_name || '';
 
           return {
-            id: item.id || code,
-            name,
+            id: item.id,
             image: imageUrl,
-            code,
-            price: (priceMap[code]?.price) || item.retail_price || item.retailPrice || item.price || 0,
-            wholesale_price: (wholesalePriceMap[code]?.price) || item.wholesale_price || item.wholesalePrice || 0,
-            available_qty: qtyMap[code] || 0,
-            discount: (discountMap[code]?.discount) || item.sale_discount || 0,
-            category
+            item_name: item.item_name || '',
+            category: item.category_name || '',
+            barcode: item.barcode || '',
+            item_code: itemCode || '',
+            available_qty: quantity,
+            retail_price: priceData.retail_price,
+            wholesale_price: priceData.wholesale_price
           };
         });
 
-        setStock(stockList);
+        setStock(stockData);
       } catch (err) {
-        console.error('Error fetching stock:', err);
+        console.error('Error fetching stock data:', err);
         setStock([]);
       } finally {
         setLoading(false);
@@ -117,23 +109,26 @@ export default function StockComponent() {
     };
 
     fetchStock();
-  }, []);
+  }, [selectedBranch]);
 
   // Filtered stock based on filters
   const filteredStock = stock.filter(item => {
-    const matchName = !filters.name || (item.name || '').toLowerCase().includes(filters.name.toLowerCase());
-    const matchCode = !filters.code || (item.code || '').toLowerCase().includes(filters.code.toLowerCase());
+    const matchName = !filters.name || (item.item_name || '').toLowerCase().includes(filters.name.toLowerCase());
+    const matchCode = !filters.code || (item.item_code || '').toLowerCase().includes(filters.code.toLowerCase());
     const matchCategory = !filters.category || (item.category || '').toLowerCase().includes(filters.category.toLowerCase());
     const matchMinQty = !filters.minQty || Number(item.available_qty) >= Number(filters.minQty);
     const matchMaxQty = !filters.maxQty || Number(item.available_qty) <= Number(filters.maxQty);
-    const matchMinPrice = !filters.minPrice || Number(item.price) >= Number(filters.minPrice);
-    const matchMaxPrice = !filters.maxPrice || Number(item.price) <= Number(filters.maxPrice);
+    const matchMinPrice = !filters.minPrice || Number(item.retail_price) >= Number(filters.minPrice);
+    const matchMaxPrice = !filters.maxPrice || Number(item.retail_price) <= Number(filters.maxPrice);
     return matchName && matchCode && matchCategory && matchMinQty && matchMaxQty && matchMinPrice && matchMaxPrice;
   });
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold text-[#03648a] mb-4">Stock Inventory</h2>
+      <h2 className="text-xl font-bold text-[#03648a] mb-4">
+        Stock Inventory {selectedBranch ? `- ${selectedBranch.name}` : ''}
+      </h2>
+      
       {/* Filter Controls */}
       <div className="flex flex-wrap gap-3 mb-4 items-end">
         <div>
@@ -220,6 +215,7 @@ export default function StockComponent() {
           Clear
         </button>
       </div>
+
       {loading ? (
         <div className="text-gray-500">Loading stock...</div>
       ) : (
@@ -234,7 +230,6 @@ export default function StockComponent() {
                 <th className="px-2 py-2 font-semibold text-center">Available Qty</th>
                 <th className="px-2 py-2 font-semibold text-center">Retail Price</th>
                 <th className="px-2 py-2 font-semibold text-center">Wholesale Price</th>
-                <th className="px-2 py-2 font-semibold text-center">Discount</th>
               </tr>
             </thead>
             <tbody>
@@ -253,37 +248,53 @@ export default function StockComponent() {
                       {item.image ? (
                         <img
                           src={item.image}
-                          alt={item.name}
+                          alt={item.item_name}
                           className="w-full h-full object-cover"
                           style={{ minWidth: '40px', minHeight: '28px' }}
-                          onError={e => { e.target.onerror = null; e.target.src = '/no-image.png'; }}
+                          onError={e => { 
+                            e.target.onerror = null; 
+                            e.target.src = '/no-image.png'; 
+                          }}
                         />
                       ) : (
                         <span className="text-gray-400 text-xs">No Image</span>
                       )}
                     </div>
                   </td>
-                  <td className="text-center align-middle">{item.name}</td>
+                  <td className="text-center align-middle">{item.item_name}</td>
                   <td className="text-center align-middle">{item.category}</td>
-                  <td className="text-center align-middle">{item.code}</td>
-                  <td className="text-center align-middle font-bold">{item.available_qty}</td>
-                  <td className="text-center align-middle">LKR {Number(item.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  <td className="text-center align-middle">LKR {Number(item.wholesale_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  <td className="text-center align-middle">LKR {Number(item.discount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td className="text-center align-middle">{item.barcode}</td>
+                  <td className="text-center align-middle font-bold">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      item.available_qty === 0 
+                        ? 'bg-red-100 text-red-600' 
+                        : item.available_qty < 10 
+                        ? 'bg-yellow-100 text-yellow-600' 
+                        : 'bg-green-100 text-green-600'
+                    }`}>
+                      {item.available_qty}
+                    </span>
+                  </td>
+                  <td className="text-center align-middle">
+                    LKR {Number(item.retail_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="text-center align-middle">
+                    LKR {Number(item.wholesale_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={8} className="text-center text-gray-400 py-4">No stock data found.</td>
+                  <td colSpan={7} className="text-center text-gray-400 py-4">
+                    No stock data found.
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       )}
+
+      
     </div>
   );
 }
-
-// How Available Qty is calculated:
-// For each item code, Available Qty is the sum of all 'quantity' fields for that code from all GRNs.
-// Example: If GRN1 has 5 units of code X and GRN2 has 3 units of code X, Available Qty for X = 8.

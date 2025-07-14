@@ -3,19 +3,19 @@ const db = require('../db');
 // Create a new expense
 exports.createExpense = async (req, res) => {
   try {
-    const { expense, paidTo, date, amount, paymentMethod, status, remark, balance } = req.body;
+    const { expense, paidTo, date, amount, paymentMethod, status, remark, balance, branch_id } = req.body;
     let receipt = null;
     if (req.file) {
       receipt = req.file.filename;
     }
-    if (!expense || !paidTo || !date || !amount || !paymentMethod || !status) {
+    if (!expense || !paidTo || !date || !amount || !paymentMethod || !status || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     // Fix: If balance is empty string, set to null
     const balanceValue = balance === '' || balance === undefined ? null : balance;
     await db.execute(
-      'INSERT INTO expenses (expense, paidTo, date, amount, paymentMethod, status, remark, balance, receipt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [expense, paidTo, date, amount, paymentMethod, status, remark || '', balanceValue, receipt]
+      'INSERT INTO expenses (expense, paidTo, date, amount, paymentMethod, status, remark, balance, receipt, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [expense, paidTo, date, amount, paymentMethod, status, remark || '', balanceValue, receipt, branch_id]
     );
     res.status(201).json({ message: 'Expense created' });
   } catch (err) {
@@ -27,7 +27,11 @@ exports.createExpense = async (req, res) => {
 // Get all expenses
 exports.getAllExpenses = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM expenses ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM expenses WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     res.json(rows);
   } catch (err) {
     console.error('Error in getAllExpenses:', err);

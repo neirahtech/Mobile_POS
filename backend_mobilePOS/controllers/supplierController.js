@@ -3,13 +3,13 @@ const db = require('../db');
 // Create supplier
 exports.createSupplier = async (req, res) => {
   try {
-    const { name, contact, total_purchase, paid, discount, balance } = req.body;
-    if (!name || !contact) {
+    const { name, contact, total_purchase, paid, discount, balance, branch_id } = req.body;
+    if (!name || !contact || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO suppliers (name, contact, total_purchase, paid, discount, balance) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, contact, total_purchase || 0, paid || 0, discount || 0, balance || 0]
+      'INSERT INTO suppliers (name, contact, total_purchase, paid, discount, balance, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, contact, total_purchase || 0, paid || 0, discount || 0, balance || 0, branch_id]
     );
     res.status(201).json({ message: 'Supplier created' });
   } catch (err) {
@@ -20,7 +20,11 @@ exports.createSupplier = async (req, res) => {
 // Get all suppliers
 exports.getAllSuppliers = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM suppliers ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM suppliers WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching suppliers', error: err.message });

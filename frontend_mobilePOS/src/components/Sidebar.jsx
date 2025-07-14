@@ -7,6 +7,7 @@ import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/r
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { usePOS } from '../context/POSContext';
+import { useStore } from '../context/StoreContext';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -24,6 +25,7 @@ const navigation = [
 export default function Sidebar() {
   const location = useLocation();
   const { isSidebarCollapsed, setIsSidebarCollapsed } = usePOS();
+  const { storeInfo } = useStore();
   const [openDropdown, setOpenDropdown] = useState(null);
   const sidebarRef = useRef(null);
 
@@ -57,13 +59,45 @@ export default function Sidebar() {
       {/* Header */}
       <div className="p-3 border-b border-[#7ed8fa]/40 header-section flex items-center justify-between">
         <div className="flex items-center gap-2 w-full">
-          <span
-            className={`text-xl font-bold sidebar-logo-text tracking-wide ${isSidebarCollapsed ? 'text-center w-full' : ''}`}
-            style={{ cursor: 'pointer' }}
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          >
-            POS
-          </span>
+          {storeInfo?.logo ? (
+            <div className="flex items-center justify-center w-full">
+              <div className="relative">
+                <img 
+                  src={storeInfo?.logo 
+                    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/uploads/${storeInfo.logo.replace(/^\/+|\/+$/g, '')}`
+                    : ''} 
+                  alt={storeInfo.name || 'Store Logo'} 
+                  className={`${isSidebarCollapsed ? 'h-8 w-8' : 'h-10 w-10'} rounded-full object-cover bg-white p-1`}
+                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                  onError={(e) => {
+                    console.error('Error loading logo:', e.target.src);
+                    e.target.style.display = 'none';
+                    const fallback = e.target.parentElement.querySelector('.logo-fallback');
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div 
+                  className="logo-fallback hidden items-center justify-center absolute inset-0 bg-gray-200 rounded-full"
+                  style={{ display: 'none' }}
+                >
+                  {storeInfo.name ? storeInfo.name.charAt(0).toUpperCase() : 'S'}
+                </div>
+              </div>
+              {!isSidebarCollapsed && (
+                <span className="ml-2 text-xl font-bold sidebar-logo-text tracking-wide truncate max-w-[120px]">
+                  {storeInfo.name || 'Store'}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span
+              className={`text-xl font-bold sidebar-logo-text tracking-wide ${isSidebarCollapsed ? 'text-center w-full' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            >
+              {isSidebarCollapsed ? 'POS' : (storeInfo?.name || 'POS')}
+            </span>
+          )}
         </div>
         {/* Removed collapse/expand icon */}
       </div>

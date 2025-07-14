@@ -3,13 +3,13 @@ const db = require('../db');
 // Create Pay in Terms customer
 exports.createPayInTerms = async (req, res) => {
   try {
-    const { name, contact, creditLimit, termDuration, creditUsed, paymentCycle } = req.body;
-    if (!name || !contact || !creditLimit || !termDuration || !paymentCycle) {
+    const { name, contact, creditLimit, termDuration, creditUsed, paymentCycle, branch_id } = req.body;
+    if (!name || !contact || !creditLimit || !termDuration || !paymentCycle || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO pay_in_terms (name, contact, creditLimit, termDuration, creditUsed, paymentCycle) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, contact, creditLimit, termDuration, creditUsed || 0, paymentCycle]
+      'INSERT INTO pay_in_terms (name, contact, creditLimit, termDuration, creditUsed, paymentCycle, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, contact, creditLimit, termDuration, creditUsed || 0, paymentCycle, branch_id]
     );
     res.status(201).json({ message: 'Pay in Terms customer created' });
   } catch (err) {
@@ -20,7 +20,11 @@ exports.createPayInTerms = async (req, res) => {
 // Get all Pay in Terms customers
 exports.getAllPayInTerms = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM pay_in_terms ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM pay_in_terms WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching pay in terms customers', error: err.message });

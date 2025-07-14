@@ -28,18 +28,14 @@ const addItem = async (req, res) => {
       description,
       Category_name,
       variant_type,
-      variant_option
+      variant_option,
+      branch_id // <-- add branch_id
     } = cleanBody;
 
-    if (!item_name) {
-      console.warn("item_name is missing from sanitized body. Received keys:", Object.keys(cleanBody));
-    }
-
-    // Validate required fields
-    if (!item_name || !model_number || !Category_name) {
+    if (!item_name || !model_number || !Category_name || !branch_id) {
       return res.status(400).json({
-        message: "item_name, model_number, and Category_name are required fields",
-        receivedData: { item_name, model_number, Category_name }
+        message: "item_name, model_number, Category_name, and branch_id are required fields",
+        receivedData: { item_name, model_number, Category_name, branch_id }
       });
     }
 
@@ -49,9 +45,9 @@ const addItem = async (req, res) => {
     // Insert into database
     const [result] = await db.query(
       `INSERT INTO items 
-       (item_name, model_number, barcode, description, Category_name, variant_type, variant_option, image) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [item_name, model_number, barcode, description, Category_name, variant_type, variant_option, image]
+       (item_name, model_number, barcode, description, Category_name, variant_type, variant_option, image, branch_id) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [item_name, model_number, barcode, description, Category_name, variant_type, variant_option, image, branch_id]
     );
 
     console.log(`Item saved: ${item_name} (${model_number}) in category ${Category_name}`);
@@ -72,6 +68,10 @@ const addItem = async (req, res) => {
 // Read (GET) - Get all items
 const getAllItems = async (req, res) => {
   try {
+    // Default to branch_id=1 if not provided
+    const branch_id = req.query.branch_id || req.body.branch_id || req.params.branch_id || 1;
+    
+    console.log('Fetching items for branch_id:', branch_id);
     // Join items with categories to get the category name
     const [items] = await db.query(`
       SELECT 
@@ -79,7 +79,8 @@ const getAllItems = async (req, res) => {
         c.name AS category_name
       FROM items i
       LEFT JOIN categories c ON i.Category_name = c.id
-    `);
+      WHERE i.branch_id = ?
+    `, [branch_id]);
 
     // Only use the filename for image, not the full path
     const formattedItems = items.map(item => ({

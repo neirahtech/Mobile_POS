@@ -17,13 +17,13 @@ exports.createDiscount = async (req, res) => {
     if (!body || typeof body !== 'object') {
       return res.status(400).json({ message: 'Invalid request body' });
     }
-    const { name, type, value, item, items, startDate, endDate, status } = body;
-    if (!name || !type || !value || !startDate || !endDate || !status) {
+    const { name, type, value, item, items, startDate, endDate, status, branch_id } = body;
+    if (!name || !type || !value || !startDate || !endDate || !status || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO discounts (name, type, value, item, items, startDate, endDate, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, type, value, item || '', items || '[]', startDate, endDate, status]
+      'INSERT INTO discounts (name, type, value, item, items, startDate, endDate, status, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, type, value, item || '', items || '[]', startDate, endDate, status, branch_id]
     );
     res.status(201).json({ message: 'Discount created' });
   } catch (err) {
@@ -34,7 +34,11 @@ exports.createDiscount = async (req, res) => {
 // Get all discounts
 exports.getAllDiscounts = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM discounts ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM discounts WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     // Parse items field if string
     const data = rows.map(row => ({
       ...row,

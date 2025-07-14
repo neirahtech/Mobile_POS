@@ -3,13 +3,13 @@ const db = require('../db');
 // Create purchase return
 exports.createPurchaseReturn = async (req, res) => {
   try {
-    const { returnNo, supplier, date, reason, amount } = req.body;
-    if (!returnNo || !supplier || !date || !reason || !amount) {
+    const { returnNo, supplier, date, reason, amount, branch_id } = req.body;
+    if (!returnNo || !supplier || !date || !reason || !amount || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO purchase_returns (returnNo, supplier, date, reason, amount) VALUES (?, ?, ?, ?, ?)',
-      [returnNo, supplier, date, reason, amount]
+      'INSERT INTO purchase_returns (returnNo, supplier, date, reason, amount, branch_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [returnNo, supplier, date, reason, amount, branch_id]
     );
     res.status(201).json({ message: 'Purchase return created' });
   } catch (err) {
@@ -20,7 +20,11 @@ exports.createPurchaseReturn = async (req, res) => {
 // Get all purchase returns
 exports.getAllPurchaseReturns = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM purchase_returns ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM purchase_returns WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching purchase returns', error: err.message });

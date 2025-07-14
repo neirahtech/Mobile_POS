@@ -3,15 +3,15 @@ const db = require('../db');
 // Create customer
 exports.createCustomer = async (req, res) => {
   try {
-    const { name, contact, whatsapp, viber, email, address, joinedDate, paid, due, credit, status, purchases } = req.body;
-    if (!name || !contact || !joinedDate || !status) {
+    const { name, contact, whatsapp, viber, email, address, joinedDate, paid, due, credit, status, purchases, branch_id } = req.body;
+    if (!name || !contact || !joinedDate || !status || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     const purchasesJson = purchases ? JSON.stringify(purchases) : '[]';
     await db.execute(
-      'INSERT INTO customers (name, contact, whatsapp, viber, email, address, joinedDate, paid, due, credit, status, purchases) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO customers (name, contact, whatsapp, viber, email, address, joinedDate, paid, due, credit, status, purchases, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 
-      [name, contact, !!whatsapp, !!viber, email || '', address || '', joinedDate, paid || 0, due || 0, credit || 0, status, purchasesJson]
+      [name, contact, !!whatsapp, !!viber, email || '', address || '', joinedDate, paid || 0, due || 0, credit || 0, status, purchasesJson, branch_id]
     );
     res.status(201).json({ message: 'Customer created' });
   } catch (err) {
@@ -22,8 +22,12 @@ exports.createCustomer = async (req, res) => {
 // Get all customers
 exports.getAllCustomers = async (req, res) => {
   try {
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
     // Fix: MySQL JSON columns may already be objects, so only parse if string
-    const [rows] = await db.execute('SELECT * FROM customers ORDER BY id DESC');
+    const [rows] = await db.execute('SELECT * FROM customers WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     const data = rows.map(row => ({
       ...row,
       purchases: typeof row.purchases === 'string'

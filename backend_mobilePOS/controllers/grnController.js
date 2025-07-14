@@ -9,19 +9,27 @@ const createGRN = async (req, res) => {
       invoice_number,
       invoice_date,
       invoice_total,
-      items // array of items
+      items,
+      branch_id
     } = req.body;
 
-    if (!grn_id || !supplier_name || !invoice_number || !invoice_date || !items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: "Missing required GRN fields or items" });
+    // Log for debugging
+    console.log('GRN createGRN received branch_id:', branch_id, 'Type:', typeof branch_id);
+
+    let branchId = parseInt(branch_id, 10);
+    if (!Number.isInteger(branchId) || branchId <= 0) {
+      return res.status(400).json({ message: "branch_id must be a valid positive integer" });
     }
 
     // Insert each item as a row in grn table, all with same grn_id
     for (const item of items) {
+      // Defensive: log the item and branchId for debugging
+      console.log('Inserting GRN row with branchId:', branchId, 'item:', item);
+
       await db.query(
         `INSERT INTO grn 
-          (grn_id, supplier_name, invoice_number, invoice_date, invoice_total, item_code, item_name, cost_price, wholesale_price, retail_price, sale_discount, quantity, warranty, expiry, item_invoice_total)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (grn_id, supplier_name, invoice_number, invoice_date, invoice_total, item_code, item_name, cost_price, wholesale_price, retail_price, sale_discount, quantity, warranty, expiry, item_invoice_total, branch_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           grn_id,
           supplier_name,
@@ -37,7 +45,8 @@ const createGRN = async (req, res) => {
           item.quantity || 0,
           item.warranty || null,
           item.expiry || null,
-          item.invoiceTotal || 0
+          item.invoiceTotal || 0,
+          branchId
         ]
       );
     }
@@ -49,12 +58,29 @@ const createGRN = async (req, res) => {
   }
 };
 
-// Get all GRNs (grouped by grn_id, with items as array)
+// Get all GRNs (optionally filtered by branch_id)
 const getAllGRNs = async (req, res) => {
   try {
-    const [rows] = await db.query(
-      `SELECT * FROM grn ORDER BY id DESC`
-    );
+    let branch_id = req.query.branch_id || req.body.branch_id || req.params.branch_id;
+    branch_id = Number(branch_id);
+    let rows;
+    
+    if (branch_id) {
+      console.log('GRN getAllGRNs received branch_id:', branch_id);
+      if (!Number.isInteger(branch_id) || branch_id <= 0) {
+        return res.status(400).json({ message: "branch_id must be a valid positive integer" });
+      }
+      [rows] = await db.query(
+        `SELECT * FROM grn WHERE branch_id = ? ORDER BY created_at DESC, id DESC`, [branch_id]
+      );
+    } else {
+      // If no branch_id provided, return all GRNs
+      console.log('GRN getAllGRNs: No branch_id provided, returning all GRNs');
+      [rows] = await db.query(
+        `SELECT * FROM grn ORDER BY created_at DESC, id DESC`
+      );
+    }
+    
     // Group by grn_id
     const grnMap = {};
     for (const row of rows) {
@@ -137,8 +163,14 @@ const updateGRN = async (req, res) => {
       invoice_number,
       invoice_date,
       invoice_total,
-      items
+      items,
+      branch_id
     } = req.body;
+
+    let branchId = parseInt(branch_id, 10);
+    if (!Number.isInteger(branchId) || branchId <= 0) {
+      return res.status(400).json({ message: "branch_id must be a valid positive integer" });
+    }
 
     // Check if GRN exists
     const [rows] = await db.query(`SELECT * FROM grn WHERE grn_id = ?`, [grn_id]);
@@ -149,28 +181,30 @@ const updateGRN = async (req, res) => {
     // Delete all rows for this grn_id
     await db.query(`DELETE FROM grn WHERE grn_id = ?`, [grn_id]);
 
-    // Insert new rows
+    // Insert new rows with proper field mapping
     for (const item of items) {
       await db.query(
         `INSERT INTO grn 
-          (grn_id, supplier_name, invoice_number, invoice_date, invoice_total, item_code, item_name, cost_price, wholesale_price, retail_price, sale_discount, quantity, warranty, expiry, item_invoice_total)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (grn_id, supplier_name, invoice_number, invoice_date, invoice_total, item_code, item_name, cost_price, wholesale_price, retail_price, sale_discount, quantity, warranty, expiry, item_invoice_total, branch_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           grn_id,
           supplier_name,
           invoice_number,
           invoice_date,
           invoice_total,
-          item.code || null,
-          item.productName || null,
-          item.costPrice || 0,
-          item.wholesalePrice || 0,
-          item.retailPrice || 0,
-          item.saleDiscount || 0,
+          // Handle both formats for flexibility
+          item.item_code || item.code || null,
+          item.item_name || item.productName || null,
+          item.cost_price || item.costPrice || 0,
+          item.wholesale_price || item.wholesalePrice || 0,
+          item.retail_price || item.retailPrice || 0,
+          item.sale_discount || item.saleDiscount || 0,
           item.quantity || 0,
           item.warranty || null,
           item.expiry || null,
-          item.invoiceTotal || 0
+          item.item_invoice_total || item.invoiceTotal || 0,
+          branchId
         ]
       );
     }
@@ -199,5 +233,3 @@ const deleteGRN = async (req, res) => {
 };
 
 module.exports = { createGRN, getAllGRNs, getGRNById, updateGRN, deleteGRN };
-
-

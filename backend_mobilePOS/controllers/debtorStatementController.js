@@ -3,13 +3,13 @@ const db = require('../db');
 // Create debtor statement
 exports.createDebtorStatement = async (req, res) => {
   try {
-    const { supplier, date, description, debit, credit, balance } = req.body;
-    if (!supplier || !date || !description) {
+    const { supplier, date, description, debit, credit, balance, branch_id } = req.body;
+    if (!supplier || !date || !description || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO debtor_statements (supplier, date, description, debit, credit, balance) VALUES (?, ?, ?, ?, ?, ?)',
-      [supplier, date, description, debit || 0, credit || 0, balance || 0]
+      'INSERT INTO debtor_statements (supplier, date, description, debit, credit, balance, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [supplier, date, description, debit || 0, credit || 0, balance || 0, branch_id]
     );
     res.status(201).json({ message: 'Debtor statement created' });
   } catch (err) {
@@ -20,7 +20,11 @@ exports.createDebtorStatement = async (req, res) => {
 // Get all debtor statements
 exports.getAllDebtorStatements = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM debtor_statements ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM debtor_statements WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching debtor statements', error: err.message });

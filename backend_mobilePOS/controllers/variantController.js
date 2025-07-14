@@ -2,7 +2,11 @@ const db = require("../db");
 
 const getVariants = async (req, res) => {
   try {
-    const [variants] = await db.query("SELECT * FROM variants ORDER BY variant_type, variant_option");
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [variants] = await db.query("SELECT * FROM variants WHERE branch_id = ? ORDER BY variant_type, variant_option", [branch_id]);
     
     // Group variants by type
     const groupedVariants = variants.reduce((acc, variant) => {
@@ -26,29 +30,30 @@ const getVariants = async (req, res) => {
 
 const addVariant = async (req, res) => {
   try {
-    const { variant_type, variant_option } = req.body;
-    if (!variant_type || !variant_option) {
-      return res.status(400).json({ message: "variant_type and variant_option are required" });
+    const { variant_type, variant_option, branch_id } = req.body;
+    if (!variant_type || !variant_option || !branch_id) {
+      return res.status(400).json({ message: "variant_type, variant_option, and branch_id are required" });
     }
     // Check if variant already exists
     const [existing] = await db.query(
-      "SELECT id FROM variants WHERE variant_type = ? AND variant_option = ?",
-      [variant_type, variant_option]
+      "SELECT id FROM variants WHERE variant_type = ? AND variant_option = ? AND branch_id = ?",
+      [variant_type, variant_option, branch_id]
     );
     if (existing.length > 0) {
       return res.status(400).json({ message: "Variant already exists" });
     }
     // Insert new variant
     const [result] = await db.query(
-      "INSERT INTO variants (variant_type, variant_option) VALUES (?, ?)",
-      [variant_type, variant_option]
+      "INSERT INTO variants (variant_type, variant_option, branch_id) VALUES (?, ?, ?)",
+      [variant_type, variant_option, branch_id]
     );
     res.status(201).json({ 
       message: "Variant added successfully",
       variant: {
         id: result.insertId,
         variant_type,
-        variant_option
+        variant_option,
+        branch_id
       }
     });
   } catch (error) {

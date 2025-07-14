@@ -3,6 +3,7 @@ import BillDetails from '../components/BillDetails.jsx';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { usePOS } from '../context/POSContext';
 import SalesDetails from '../components/SalesDetails.jsx';
+import api from '../utils/axios';
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -28,13 +29,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    setLoadingCategories(true);
-    fetch('http://localhost:3000/api/categories') // Use full URL for local dev
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch');
-        return res.json();
-      })
-      .then(data => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await api.get('/categories');
+        const data = response.data;
+        
         // Ensure data is an array of objects with a 'name' property
         if (Array.isArray(data) && data.length && data[0].name) {
           setCategories([{ id: 'all', name: 'All Items' }, ...data]);
@@ -43,40 +43,51 @@ export default function Home() {
           setCategories([{ id: 'all', name: 'All Items' }]);
           setCategoriesError('No categories found');
         }
-        setLoadingCategories(false);
-      })
-      .catch((err) => {
+      } catch (err) {
+        console.error('Error fetching categories:', err);
         setCategories([{ id: 'all', name: 'All Items' }]);
         setCategoriesError('Could not load categories');
+      } finally {
         setLoadingCategories(false);
-      });
+      }
+    };
+
+    fetchCategories();
   }, []);
 
   useEffect(() => {
-    // Fetch and merge items and grn data like in StockComponent
+    // Fetch and merge items, grn data, and sales data
     const fetchMenuItems = async () => {
       setLoadingMenuItems(true);
       setMenuItemsError(null);
       try {
         // Fetch items
-        const itemsRes = await fetch('http://localhost:3000/api/items');
-        if (!itemsRes.ok) throw new Error('Failed to fetch items');
-        const itemsData = await itemsRes.json();
+        const itemsResponse = await api.get('/items');
+        const itemsData = itemsResponse.data;
         const items = itemsData?.items || [];
 
         // Fetch GRNs
-        const grnRes = await fetch('http://localhost:3000/api/grn');
-        if (!grnRes.ok) throw new Error('Failed to fetch grns');
-        const grnData = await grnRes.json();
+        const grnResponse = await api.get('/grn');
+        const grnData = grnResponse.data;
         const grns = Array.isArray(grnData) ? grnData : grnData?.grns || [];
 
-        // Build maps for quantities, latest prices, and discounts from GRNs
+        // Fetch Sales Details
+        const salesResponse = await api.get('/sales-details');
+        const salesData = salesResponse.data;
+        // salesData should be an array of sales, each with items: [{name, quantity}]
+        const sales = Array.isArray(salesData) ? salesData : [];
+
+        // Build maps for GRN quantities, latest prices, and discounts up to today
         const qtyMap = {};
         const priceMap = {};
         const discountMap = {};
+        const today = new Date().toISOString().slice(0, 10);
 
-        // Process GRNs in reverse order to get latest prices and discounts
-        [...grns].reverse().forEach(grn => {
+        // Process GRNs up to today
+        [...grns].forEach(grn => {
+          // Only consider GRNs up to today
+          const grnDate = grn.invoice_date ? grn.invoice_date.slice(0, 10) : '';
+          if (grnDate && grnDate > today) return;
           (grn.items || []).forEach(item => {
             const code = item.item_code || item.code;
             qtyMap[code] = (qtyMap[code] || 0) + Number(item.quantity || 0);
@@ -89,6 +100,21 @@ export default function Home() {
                 discount: item.sale_discount || 0,
                 grnId: grn.id
               };
+            }
+          });
+        });
+
+        // Build sales quantity map up to today
+        const salesQtyMap = {};
+        sales.forEach(sale => {
+          const saleDate = sale.date ? (typeof sale.date === 'string' ? sale.date.slice(0, 10) : new Date(sale.date).toISOString().slice(0, 10)) : '';
+          if (saleDate && saleDate > today) return;
+          (sale.items || []).forEach(saleItem => {
+            // Find the item code by matching name
+            const matchedItem = items.find(i => (i.name || i.item_name) === saleItem.name);
+            if (matchedItem) {
+              const code = matchedItem.item_code || matchedItem.model_number || matchedItem.code || '';
+              salesQtyMap[code] = (salesQtyMap[code] || 0) + Number(saleItem.quantity || 0);
             }
           });
         });
@@ -117,7 +143,7 @@ export default function Home() {
           });
         });
 
-        // Map to menuItems format, include discount
+        // Map to menuItems format, include discount and correct available calculation
         const mergedMenuItems = itemsInGrns.map(item => {
           const code = item.item_code || item.model_number || item.code || '';
           // Image URL construction
@@ -128,12 +154,14 @@ export default function Home() {
               ? item.image
               : `http://localhost:3000/uploads/${item.image}`;
           }
+          // Calculate available: GRN qty up to today - sales qty up to today
+          const available = (qtyMap[code] || 0) - (salesQtyMap[code] || 0);
           return {
             id: item.id,
             name: item.name || item.item_name || '',
             price: Number(item.retail_price || item.retailPrice || item.price || 0),
             image: imageUrl,
-            available: qtyMap[code] || 0,
+            available: available,
             barcode: code,
             discount: (discountMap[code] && discountMap[code].discount) || 0,
           };
@@ -356,7 +384,7 @@ export default function Home() {
                           {category.name}
                         </button>
                       ))
-                    )}
+                   ) }
                   </div>
                 </div>
               </div>

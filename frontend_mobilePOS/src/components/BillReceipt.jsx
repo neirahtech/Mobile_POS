@@ -2,8 +2,24 @@ import React from 'react';
 
 export default function BillReceipt({ order, onClose, printMode }) {
   if (!order) return null;
-  const { customerName, cart, date, paymentMethod, subtotal, discount, tax, total, paidAmount, futureCredit } = order;
-  const change = paidAmount - total;
+  const { 
+    customerName, 
+    cart, 
+    date, 
+    paymentMethod, 
+    subtotal, 
+    discount = { type: 'percentage', value: 0, amount: 0 },
+    tax = { rate: 0.18, amount: 0 },
+    total, 
+    paidAmount, 
+    futureCredit = 0,
+    billingSettings = { taxPercentage: 18 }
+  } = order;
+  
+  // Calculate change and ensure it's not negative
+  const change = Math.max(0, (paidAmount || 0) - total);
+  const taxRate = (tax.rate || (billingSettings.taxPercentage / 100) || 0.18) * 100;
+  const receiptFooter = billingSettings?.receiptFooter || 'Thank you for your business!';
 
   return (
     <div
@@ -39,7 +55,22 @@ export default function BillReceipt({ order, onClose, printMode }) {
         </div>
         <div className="border-b border-dashed my-1" />
         <div className="flex justify-between text-[12px]">
-          <span>TOTAL AMOUNT</span>
+          <span>SUBTOTAL</span>
+          <span>{subtotal.toFixed(2)}</span>
+        </div>
+        {discount?.amount > 0 && (
+          <div className="flex justify-between text-[12px] text-red-600">
+            <span>DISCOUNT ({discount.value}%)</span>
+            <span>-{discount.amount.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-[12px]">
+          <span>TAX ({taxRate}%)</span>
+          <span>{tax.amount.toFixed(2)}</span>
+        </div>
+        <div className="border-t border-dashed my-1" />
+        <div className="flex justify-between text-[12px] font-bold">
+          <span>TOTAL</span>
           <span>{total.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-[12px]">
@@ -57,13 +88,24 @@ export default function BillReceipt({ order, onClose, printMode }) {
           </div>
         )}
         <div className="flex justify-between text-[12px] mt-2">
-          <span>Payment</span>
-          <span>{paymentMethod?.toUpperCase()}</span>
+          <span>Payment Method</span>
+          <span className="font-semibold">{String(paymentMethod || '').toUpperCase()}</span>
         </div>
+        {customerName && (
+          <div className="flex justify-between text-[12px]">
+            <span>Customer</span>
+            <span className="font-semibold">{customerName}</span>
+          </div>
+        )}
         <div className="border-b border-dashed my-2" />
         <div className="text-center text-[13px] font-bold mb-2">
           {'*'.repeat(10)}THANK YOU!{'*'.repeat(10)}
         </div>
+        {receiptFooter && (
+          <div className="text-center text-[11px] text-gray-600 mt-1">
+            {receiptFooter}
+          </div>
+        )}
         {/* Barcode placeholder */}
         <div className="flex justify-center mt-2">
           <div style={{

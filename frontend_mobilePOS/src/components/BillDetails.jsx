@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   UserIcon, 
   PrinterIcon,
   XMarkIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { BsCashStack, BsCreditCard2FrontFill, BsQrCode } from 'react-icons/bs';
 
 import { toast } from 'react-toastify';
-import BillReceipt from './BillReceipt'; // (Make sure this import exists or is correct)
+import BillReceipt from './BillReceipt';
+import api from '../utils/axios';
+import { useBranch } from '../context/BranchContext';
 
 export default function BillDetails({
   cart = [],
@@ -24,15 +27,100 @@ export default function BillDetails({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paidAmount, setPaidAmount] = useState('');
   const [futureCredit, setFutureCredit] = useState(0);
+  const [discounts, setDiscounts] = useState([]);
+  const [selectedDiscount, setSelectedDiscount] = useState('');
+  const [billingSettings, setBillingSettings] = useState({
+    defaultPaymentMethod: 'cash',
+    defaultDiscountType: 'percentage',
+    defaultDiscountValue: 0,
+    taxPercentage: 18
+  });
+  const { selectedBranch } = useBranch();
   
-  // Fixed tax rate of 18%
-  const taxRate = 0.18;
+  // Fetch billing settings and discounts on component mount
+  useEffect(() => {
+    const fetchBillingSettings = async () => {
+      try {
+        const response = await api.get('/billing-settings', {
+          params: { branch_id: selectedBranch?.id || 1 }
+        });
+        if (response.data) {
+          setBillingSettings(prev => ({
+            ...prev,
+            ...response.data
+          }));
+          // Apply default payment method from settings (case-insensitive)
+          const defaultMethod = (response.data.defaultPaymentMethod || 'cash').toLowerCase();
+          setPaymentMethod(defaultMethod);
+          // Apply default discount if set
+          if (response.data.defaultDiscountType === 'percentage' && response.data.defaultDiscountValue) {
+            setDiscountPercentage(parseFloat(response.data.defaultDiscountValue));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching billing settings:', error);
+        toast.error('Failed to load billing settings');
+      }
+    };
+
+    const fetchDiscounts = async () => {
+      try {
+        const response = await api.get('/discounts');
+        setDiscounts((response.data || []).map(d => ({
+          ...d,
+          items: typeof d.items === 'string' ? JSON.parse(d.items) : (d.items || [])
+        })));
+      } catch (error) {
+        console.error('Error fetching discounts:', error);
+        toast.error('Failed to load discounts');
+        setDiscounts([]);
+      }
+    };
+
+    fetchBillingSettings();
+    fetchDiscounts();
+  }, [selectedBranch?.id]);
+
+  // Handle discount selection
+  const handleDiscountChange = (e) => {
+    const discountId = e.target.value;
+    setSelectedDiscount(discountId);
+    
+    if (!discountId) {
+      setDiscountPercentage(0);
+      return;
+    }
+    
+    const selected = discounts.find(d => d.id === discountId);
+    if (selected) {
+      setDiscountPercentage(parseFloat(selected.value) || 0);
+    }
+  };
+
+  // Payment methods configuration
+  const paymentMethods = [
+    { method: 'cash', icon: <BsCashStack className="w-4 h-4" />, label: 'Cash' },
+    { method: 'card', icon: <BsCreditCard2FrontFill className="w-4 h-4" />, label: 'Card' },
+    { method: 'qr', icon: <BsQrCode className="w-4 h-4" />, label: 'QR' },
+  ].map(method => ({
+    ...method,
+    isActive: paymentMethod === method.method
+  }));
+
+  // Handle payment method change
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method.toLowerCase());
+  };
+
+  // Get tax rate from billing settings
+  const taxRate = (billingSettings.taxPercentage || 18) / 100;
 
   // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const discountAmount = subtotal * (discountPercentage / 100);
-  const tax = (subtotal - discountAmount) * taxRate;
-  const total = subtotal - discountAmount + tax;
+  const discountAmount = (subtotal * (discountPercentage / 100));
+  const taxAmount = (subtotal - discountAmount) * taxRate;
+  const grandTotal = subtotal - discountAmount + taxAmount;
+  const total = subtotal - discountAmount + taxAmount;
 
   const handleQuantityChange = (index, delta) => {
     if (delta > 0) {
@@ -82,7 +170,7 @@ export default function BillDetails({
       toast.error('Please enter a valid paid amount');
       return;
     }
-    if (paid < total) {
+    if (paid < grandTotal) {
       toast.error('Paid amount is less than total. Please collect full payment.');
       return;
     }
@@ -90,8 +178,8 @@ export default function BillDetails({
     setIsProcessing(true);
     try {
       let credit = 0;
-      if (paid > total) {
-        credit = paid - total;
+      if (paid > grandTotal) {
+        credit = paid - grandTotal;
         setFutureCredit(credit);
         toast.info(`Extra LKR ${credit.toFixed(2)} will be kept for future purchases.`, {
           position: 'bottom-right',
@@ -112,9 +200,9 @@ export default function BillDetails({
         },
         tax: {
           rate: taxRate,
-          amount: tax
+          amount: taxAmount
         },
-        total,
+        total: grandTotal,
         paidAmount: paid,
         futureCredit: credit,
         paymentMethod,
@@ -302,23 +390,27 @@ export default function BillDetails({
             <label className="text-xs text-[#0492C2] font-medium mb-1 block">Discount</label>
             <div className="flex items-center gap-1">
               <select
-                value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Number(e.target.value))}
+                value={selectedDiscount}
+                onChange={handleDiscountChange}
                 className="flex-1 text-xs border-2 rounded-lg px-2 py-1.5 bg-white/90 border-[#b6e0fe] focus:outline-none focus:ring-1 focus:ring-[#0492C2] transition-all duration-300 hover:border-[#0492C2] shadow-sm"
               >
-                <option value="0">Percentage</option>
-                <option value="5">Senior Citizen Discount</option>
-                <option value="10">Member Discount</option>
-                <option value="15">Festival Offer</option>
-                <option value="20">Seasonal Discount</option>
-                <option value="25">Special Promotion</option>
+                <option value="">Percentage (0%)</option>
+                {discounts.map((discount) => (
+                  <option key={discount.id} value={discount.id}>
+                    {discount.name} ({discount.value}%)
+                  </option>
+                ))}
               </select>
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  setDiscountPercentage(value);
+                  if (value > 0) setSelectedDiscount('');
+                }}
                 className="w-16 text-xs border-2 rounded-lg px-2 py-1.5 bg-white/90 border-[#b6e0fe] focus:outline-none focus:ring-1 focus:ring-[#0492C2] transition-all duration-300 hover:border-[#0492C2] shadow-sm"
                 placeholder="%"
               />
@@ -329,32 +421,28 @@ export default function BillDetails({
           <div className="mb-2 relative z-10">
             <label className="text-xs text-[#0492C2] mb-1 block font-medium">Payment Method</label>
             <div className="grid grid-cols-3 gap-1">
-              {[
-                { method: 'cash', icon: <BsCashStack className="w-4 h-4" />, label: 'Cash' },
-                { method: 'card', icon: <BsCreditCard2FrontFill className="w-4 h-4" />, label: 'Card' },
-                { method: 'qr', icon: <BsQrCode className="w-4 h-4" />, label: 'QR' },
-              ].map(({ method, icon, label }) => (
+              {paymentMethods.map(({ method, icon, label, isActive }) => (
                 <button
                   key={method}
-                  onClick={() => setPaymentMethod(method)}
+                  onClick={() => handlePaymentMethodChange(method)}
                   className={`relative flex flex-col items-center p-1.5 rounded-lg border-2 text-[10px] shadow-md transition-all duration-300 overflow-hidden group transform hover:-translate-y-0.5 ${
-                    paymentMethod === method
-                      ? 'border-[#0492C2] bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
-                      : 'border-[#b6e0fe] hover:border-[#0492C2] bg-white/90'
+                    isActive
+                      ? 'bg-gradient-to-br from-[#0492C2] to-[#b6e0fe] text-white'
+                      : 'bg-white/90 border-[#b6e0fe] hover:border-[#0492C2]'
                   }`}
                 >
                   <div className={`absolute inset-0 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] transition-transform duration-500 ${
-                    paymentMethod === method ? 'translate-x-0' : '-translate-x-full'
+                    isActive ? 'translate-x-0' : '-translate-x-full'
                   }`} />
                   
                   <div className="relative z-10 flex flex-col items-center">
                     <div className={`transition-all duration-300 transform group-hover:scale-110 ${
-                      paymentMethod === method ? 'text-white' : 'text-[#0492C2] group-hover:text-[#03648a]'
+                      isActive ? 'text-white' : 'text-[#0492C2] group-hover:text-[#03648a]'
                     }`}>
                       {icon}
                     </div>
                     <span className={`mt-0.5 font-medium transition-colors duration-300 ${
-                      paymentMethod === method ? 'text-white' : 'text-gray-600 group-hover:text-[#03648a]'
+                      isActive ? 'text-white' : 'text-gray-600 group-hover:text-[#03648a]'
                     }`}>
                       {label}
                     </span>
@@ -377,12 +465,12 @@ export default function BillDetails({
               </div>
             )}
             <div className="flex justify-between text-[#0492C2]">
-              <span className="font-medium">Tax (18%)</span>
-              <span className="font-bold">LKR {tax.toFixed(2)}</span>
+              <span className="font-medium">Tax ({(billingSettings.taxPercentage || 18)}%)</span>
+              <span className="font-bold">LKR {taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-[#0492C2] font-bold pt-1 border-t border-[#b6e0fe]">
               <span>Total</span>
-              <span>LKR {total.toFixed(2)}</span>
+              <span>LKR {grandTotal.toFixed(2)}</span>
             </div>
             {/* Paid Amount Input */}
             <div className="flex justify-between items-center mt-2">
@@ -399,14 +487,14 @@ export default function BillDetails({
               />
             </div>
             {/* Show info if paid is less or more */}
-            {paidAmount && parseFloat(paidAmount) < total && (
+            {paidAmount && parseFloat(paidAmount) < grandTotal && (
               <div className="text-xs text-red-500 mt-1 font-semibold">
                 Paid amount is less than total. Please collect full payment.
               </div>
             )}
-            {paidAmount && parseFloat(paidAmount) > total && (
+            {paidAmount && parseFloat(paidAmount) > grandTotal && (
               <div className="text-xs text-[#0492C2] mt-1 font-semibold">
-                Extra LKR {(parseFloat(paidAmount) - total).toFixed(2)} will be kept for future purchases.
+                Extra LKR {(parseFloat(paidAmount) - grandTotal).toFixed(2)} will be kept for future purchases.
               </div>
             )}
           </div>
@@ -478,9 +566,9 @@ export default function BillDetails({
               id: Math.floor(Math.random() * 10000),
               customerName,
               cart,
-              date: new Date(),
-              paymentMethod,
-              subtotal,
+              date: new Date().toISOString(),
+              paymentMethod: paymentMethod,
+              subtotal: subtotal,
               discount: {
                 type: 'percentage',
                 value: discountPercentage,
@@ -488,11 +576,19 @@ export default function BillDetails({
               },
               tax: {
                 rate: taxRate,
-                amount: tax
+                amount: taxAmount
               },
-              total,
+              total: grandTotal,
               paidAmount: parseFloat(paidAmount) || 0,
-              futureCredit
+              futureCredit: futureCredit,
+              billingSettings: {
+                ...billingSettings,
+                receiptFooter: billingSettings.receiptFooter || 'Thank you for your business!',
+                defaultPaymentMethod: billingSettings.defaultPaymentMethod || 'cash',
+                defaultDiscountType: billingSettings.defaultDiscountType || 'percentage',
+                defaultDiscountValue: billingSettings.defaultDiscountValue || 0,
+                taxPercentage: billingSettings.taxPercentage || 18
+              }
             }}
             onClose={() => setShowReceipt(false)}
             printMode={true}
@@ -502,6 +598,20 @@ export default function BillDetails({
             @media print {
               body * {
                 visibility: hidden !important;
+              }
+              .print-receipt, .print-receipt * {
+                visibility: visible !important;
+              }
+              .print-receipt {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
               }
               .print-receipt, .print-receipt * {
                 visibility: visible !important;

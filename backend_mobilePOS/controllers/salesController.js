@@ -3,8 +3,8 @@ const db = require('../db');
 // Create a new sales detail
 exports.createSalesDetail = async (req, res) => {
   try {
-    let { date, customer, items, total } = req.body;
-    if (!date || !customer || !items || !total) {
+    let { date, customer, items, total, branch_id } = req.body;
+    if (!date || !customer || !items || !total || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     // Accept both mm-dd-yyyy and yyyy-mm-dd, convert to yyyy-mm-dd for MySQL
@@ -30,8 +30,8 @@ exports.createSalesDetail = async (req, res) => {
     }
     const itemsJson = JSON.stringify(items);
     const [result] = await db.execute(
-      'INSERT INTO sales_details (date, customer, items, total) VALUES (?, ?, ?, ?)',
-      [date, customer, itemsJson, total]
+      'INSERT INTO sales_details (date, customer, items, total, branch_id) VALUES (?, ?, ?, ?, ?)',
+      [date, customer, itemsJson, total, branch_id]
     );
     res.status(201).json({ id: result.insertId, date, customer, items, total });
   } catch (err) {
@@ -44,7 +44,11 @@ exports.createSalesDetail = async (req, res) => {
 // Get all sales details
 exports.getAllSalesDetails = async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM sales_details ORDER BY id DESC');
+    const branch_id = req.query.branch_id || req.body.branch_id;
+    if (!branch_id) {
+      return res.status(400).json({ message: "branch_id is required" });
+    }
+    const [rows] = await db.execute('SELECT * FROM sales_details WHERE branch_id = ? ORDER BY id DESC', [branch_id]);
     const data = rows.map(row => {
       let items = [];
       try {
