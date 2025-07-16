@@ -9,7 +9,7 @@ export default function Layout() {
   const isHomePage = location.pathname === '/home' || location.pathname === '/';
 
   return (
-    <div className="flex h-screen overflow-hidden relative layout-bg">
+    <div className="flex h-screen overflow-hidden relative bg-white">
       {/* Mobile menu button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

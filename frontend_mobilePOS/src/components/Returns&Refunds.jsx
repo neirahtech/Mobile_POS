@@ -11,14 +11,29 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
     reason: '',
     refund: '',
     method: '',
+    customer_name: '',
+    customer_id: ''
   });
   const [viewRefund, setViewRefund] = useState(null);
   const [editRefund, setEditRefund] = useState(null);
+  const [customers, setCustomers] = useState([]);
 
-  // Fetch all returns/refunds from backend
+  // Fetch all returns/refunds and customers from backend
   useEffect(() => {
     fetchReturnsRefunds();
+    fetchCustomers();
   }, []);
+
+  // Fetch all customers
+  const fetchCustomers = async () => {
+    try {
+      const res = await api.get('/customers');
+      setCustomers(res.data);
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      setCustomers([]);
+    }
+  };
 
   const fetchReturnsRefunds = async () => {
     setLoading(true);
@@ -45,15 +60,23 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
   const handleAddReturnRefund = async (e) => {
     e.preventDefault();
     try {
+      // Always send customer_name as the selected customer's name
+      let customerName = form.customer_name;
+      if (!customerName && form.customer_id) {
+        const selectedCustomer = customers.find(c => String(c.id) === String(form.customer_id));
+        customerName = selectedCustomer ? selectedCustomer.name : '';
+      }
       if (editRefund) {
         await api.put(`/returns-refunds/${editRefund.id}`, {
           ...form,
           refund: Number(form.refund),
+          customer_name: customerName,
         });
       } else {
         await api.post('/returns-refunds', {
           ...form,
           refund: Number(form.refund),
+          customer_name: customerName,
         });
       }
       setShowAddForm(false);
@@ -64,6 +87,8 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
         reason: '',
         refund: '',
         method: '',
+        customer_name: '',
+        customer_id: ''
       });
       fetchReturnsRefunds();
     } catch (err) {
@@ -107,6 +132,8 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
       reason: r.reason,
       refund: r.refund,
       method: r.method,
+      customer_name: r.customer_name || '',
+      customer_id: r.customer_id || ''
     });
   };
 
@@ -196,6 +223,30 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
                   placeholder="e.g. Cash, Bank Transfer"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[#03648a] mb-1">Customer</label>
+                <select
+                  name="customer_id"
+                  required
+                  className="w-full px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition bg-white"
+                  value={form.customer_id}
+                  onChange={(e) => {
+                    const selectedCustomer = customers.find(c => c.id === parseInt(e.target.value));
+                    setForm(prev => ({
+                      ...prev,
+                      customer_id: e.target.value,
+                      customer_name: selectedCustomer ? selectedCustomer.name : ''
+                    }));
+                  }}
+                >
+                  <option value="">Select a customer</option>
+                  {customers.map(customer => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name} - {customer.contact || 'No contact'}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <button
@@ -210,6 +261,7 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
                     reason: '',
                     refund: '',
                     method: '',
+                    customer_name: '',
                   });
                 }}
               >
@@ -235,19 +287,20 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
               <th className="px-2 py-2 font-semibold text-center">Reason</th>
               <th className="px-2 py-2 font-semibold text-center">Refund</th>
               <th className="px-2 py-2 font-semibold text-center">Refund Method</th>
+              <th className="px-2 py-2 font-semibold text-center">Customer</th>
               <th className="px-2 py-2 font-semibold text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-6 text-[#0492C2] font-semibold">
+                <td colSpan={8} className="text-center py-6 text-[#0492C2] font-semibold">
                   Loading...
                 </td>
               </tr>
             ) : returnsRefundsData.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-6 text-gray-400">
+                <td colSpan={8} className="text-center py-6 text-gray-400">
                   No returns or refunds found.
                 </td>
               </tr>
@@ -260,6 +313,7 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
                   <td className="text-center align-middle text-[#03648a]">{r.reason}</td>
                   <td className="text-center align-middle text-[#03648a]">LKR {Number(r.refund).toLocaleString()}</td>
                   <td className="text-center align-middle text-[#03648a]">{r.method}</td>
+                  <td className="text-center align-middle text-[#03648a]">{r.customer_name || 'N/A'}</td>
                   <td className="text-center align-middle">
                     <div className="flex gap-1 justify-center items-center">
                       <button
@@ -310,6 +364,7 @@ export default function ReturnsRefunds({ onView, showAddForm, setShowAddForm }) 
               <div><span className="font-semibold text-[#03648a]">Reason:</span> {viewRefund.reason}</div>
               <div><span className="font-semibold text-[#03648a]">Refund:</span> LKR {Number(viewRefund.refund).toLocaleString()}</div>
               <div><span className="font-semibold text-[#03648a]">Refund Method:</span> {viewRefund.method}</div>
+              <div><span className="font-semibold text-[#03648a]">Customer Name:</span> {viewRefund.customer_name || 'N/A'}</div>
             </div>
             <div className="flex justify-end mt-6">
               <button

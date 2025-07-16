@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BsClipboard2CheckFill, BsBox2Fill, BsQrCode, BsBoxSeamFill } from 'react-icons/bs';
+import { BsClipboard2CheckFill, BsBox2Fill, BsQrCode, BsBoxSeamFill, BsUpcScan, BsBoxSeam } from 'react-icons/bs';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { FaRegEdit } from 'react-icons/fa';
 import { MdDeleteOutline, MdVisibility } from 'react-icons/md';
@@ -10,6 +10,8 @@ import { TagIcon } from '@heroicons/react/24/solid';
 import { useBranch } from '../context/BranchContext';
 import GRNComponent from '../components/GRNComponent';
 import StockComponent from '../components/StockComponent';
+import BarcodeComponent from '../components/BarcodeComponent';
+import JsBarcode from 'jsbarcode';
 
 // Example GRN data for the table
 const hardcodedGRNs = [
@@ -46,7 +48,7 @@ const hardcodedGRNs = [
 
 export default function Inventory() {
   const { selectedBranch } = useBranch();
-  const [activeTable, setActiveTable] = useState('items'); // Set default to 'items'
+  const [activeTable, setActiveTable] = useState('barcodes'); // Set default to 'barcodes'
   const [showStockForm, setShowStockForm] = useState(false);
   const [showBarcodeForm, setShowBarcodeForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -128,6 +130,21 @@ export default function Inventory() {
   const [items, setItems] = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [errorItems, setErrorItems] = useState(null);
+
+  // Function to generate barcode image for items
+  const generateItemBarcode = (item) => {
+    const canvas = document.createElement('canvas');
+    const barcodeNumber = String(item.id).padStart(8, '0'); // Generate 8-digit barcode number
+    JsBarcode(canvas, barcodeNumber, {
+      format: 'CODE128',
+      displayValue: true,
+      width: 2,
+      height: 20,
+      fontSize: 12,
+      margin: 5
+    });
+    return canvas.toDataURL('image/png');
+  };
 
   // Variant states
   const [variantTypes, setVariantTypes] = useState([]);
@@ -715,6 +732,17 @@ export default function Inventory() {
             <BsBox2Fill className="w-4 h-4" />
             Stock
           </button>
+          <button
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
+              activeTable === 'barcodes'
+                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
+                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
+            }`}
+            onClick={() => { setActiveTable('barcodes'); setShowStockForm(false); setShowBarcodeForm(false); }}
+          >
+            <BsUpcScan className="w-4 h-4" />
+            Barcodes
+          </button>
         </div>
 
         {/* Items Tab */}
@@ -829,7 +857,18 @@ export default function Inventory() {
                           />
                         </td>
                         <td className="text-center align-middle text-[#03648a]">{item.model_number}</td>
-                        <td className="text-center align-middle text-[#03648a]">{item.barcode}</td>
+                        <td className="text-center align-middle">
+                          <div className="flex flex-col items-center">
+                            <img 
+                              src={generateItemBarcode(item)} 
+                              alt="Barcode" 
+                              className="h-8 w-auto mb-1"
+                            />
+                            <span className="text-xs text-gray-500">
+                              {String(item.id).padStart(8, '0')}
+                            </span>
+                          </div>
+                        </td>
                         <td className="text-center align-middle text-[#03648a]">{item.item_name}</td>
                         <td className="text-center align-middle text-[#03648a]">
                           {/* Display category_name from backend as Category */}
@@ -1446,6 +1485,13 @@ export default function Inventory() {
         {activeTable === 'stock' && (
           <StockComponent
             // Pass filter props for StockComponent to implement its own filters
+            filtersEnabled={true}
+          />
+        )}
+        {/* Barcode Tab - New Component */}
+        {activeTable === 'barcodes' && (
+          <BarcodeComponent
+            // Pass filter props for BarcodeComponent to implement its own filters
             filtersEnabled={true}
           />
         )}

@@ -1,8 +1,10 @@
 import { Fragment, useState, useEffect } from 'react';
-import { PlusIcon, XMarkIcon, EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { Plus, X, Eye, Edit, Trash2, BellRing, Bell, Search } from 'lucide-react';
 import PayInTerms from '../components/PayInTerms';
 import ReturnsRefunds from '../components/Returns&Refunds';
-import api from '../utils/axios'; // Make sure this points to your axios instance
+import NotificationAdmin from '../components/NotificationAdmin';
+import NotificationModal from '../components/NotificationModal';
+import api from '../utils/axios';
 
 export default function Customers() {
 	const [customers, setCustomers] = useState([]);
@@ -14,7 +16,7 @@ export default function Customers() {
 		viber: false,
 		email: '',
 		address: '',
-		joinedDate: '',
+		dateOfBirth: '',
 		paid: '',
 		due: '',
 		status: 'Active',
@@ -22,10 +24,16 @@ export default function Customers() {
 	});
 	const [viewCustomer, setViewCustomer] = useState(null);
 	const [activeTab, setActiveTab] = useState('table');
+	const [showNotifications, setShowNotifications] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [editCustomer, setEditCustomer] = useState(null);
 	const [showAddTermsForm, setShowAddTermsForm] = useState(false);
 	const [showAddRefundForm, setShowAddRefundForm] = useState(false);
+	const [showNotificationModal, setShowNotificationModal] = useState(false);
+	const [selectedCustomer, setSelectedCustomer] = useState(null);
+	const [fullDetailsSearch, setFullDetailsSearch] = useState('');
+	const [fullDetailsResult, setFullDetailsResult] = useState(null);
+	const [fullDetailsLoading, setFullDetailsLoading] = useState(false);
 
 	// Fetch all customers from backend
 	useEffect(() => {
@@ -121,7 +129,7 @@ export default function Customers() {
 			viber: !!customer.viber,
 			email: customer.email,
 			address: customer.address,
-			joinedDate: customer.joinedDate,
+			dateOfBirth: customer.dateOfBirth, // use dateOfBirth
 			paid: customer.paid,
 			due: customer.due,
 			status: customer.status,
@@ -155,7 +163,7 @@ export default function Customers() {
 				viber: false,
 				email: '',
 				address: '',
-				joinedDate: '',
+				dateOfBirth: '',
 				paid: '',
 				due: '',
 				status: 'Active',
@@ -167,11 +175,167 @@ export default function Customers() {
 		}
 	};
 
+	// Fetch all details for a customer by name
+	const fetchFullCustomerDetails = async (name) => {
+		if (!name) {
+			setFullDetailsResult(null);
+			return;
+		}
+		setFullDetailsLoading(true);
+		try {
+			// Fetch customer(s) by name (could be multiple, pick first match)
+			const customersRes = await api.get('/customers');
+			const customersList = Array.isArray(customersRes.data) ? customersRes.data : [];
+			const customer = customersList.find(c =>
+				c.name && c.name.toLowerCase().includes(name.toLowerCase())
+			);
+			if (!customer) {
+				setFullDetailsResult({ notFound: true });
+				setFullDetailsLoading(false);
+				return;
+			}
+
+			// Fetch pay in terms by customer name
+			const payTermsRes = await api.get('/pay-in-terms');
+			const payTermsList = Array.isArray(payTermsRes.data) ? payTermsRes.data : [];
+			const payTerms = payTermsList.filter(pt =>
+				pt.name && pt.name.toLowerCase().includes(name.toLowerCase())
+			);
+
+			// Fetch returns & refunds by customer name
+			const returnsRes = await api.get('/returns-refunds');
+			const returnsList = Array.isArray(returnsRes.data) ? returnsRes.data : [];
+			const returns = returnsList.filter(rf =>
+				rf.customer_name && rf.customer_name.toLowerCase().includes(name.toLowerCase())
+			);
+
+			setFullDetailsResult({
+				customer,
+				payTerms,
+				returns
+			});
+		} catch (err) {
+			setFullDetailsResult({ error: true });
+		} finally {
+			setFullDetailsLoading(false);
+		}
+	};
+
 	return (
 		<div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+			{/* --- Customer Full Details Search Section --- */}
+			<div className="bg-white/90 rounded-xl shadow border border-[#b6e0fe] p-6 mb-8">
+				<div className="flex items-center gap-2 mb-4">
+					<Search className="w-5 h-5 text-[#0492C2]" />
+					<input
+						type="text"
+						className="flex-1 px-4 py-2 border border-[#e0eefa] rounded-lg focus:ring-2 focus:ring-[#0492C2] focus:border-transparent"
+						placeholder="Search customer full details by name..."
+						value={fullDetailsSearch}
+						onChange={e => setFullDetailsSearch(e.target.value)}
+						onKeyDown={e => {
+							if (e.key === 'Enter') fetchFullCustomerDetails(fullDetailsSearch);
+						}}
+					/>
+					<button
+						className="px-4 py-2 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white rounded-lg font-semibold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition"
+						onClick={() => fetchFullCustomerDetails(fullDetailsSearch)}
+					>
+						Search
+					</button>
+				</div>
+				{fullDetailsLoading && (
+					<div className="text-[#0492C2] font-semibold py-4">Loading details...</div>
+				)}
+				{fullDetailsResult && (
+					<div className="space-y-6">
+						{fullDetailsResult.notFound ? (
+							<div className="text-red-500 font-semibold">No customer found with that name.</div>
+						) : fullDetailsResult.error ? (
+							<div className="text-red-500 font-semibold">Error fetching details.</div>
+						) : (
+							<>
+								{/* Customer Table Section */}
+								{fullDetailsResult.customer && (
+									<div className="bg-[#f8fbff] rounded-lg p-4 border border-[#e0eefa]">
+										<h3 className="text-lg font-bold text-[#03648a] mb-2">Customer Table</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+											<div><span className="font-semibold">Name:</span> {fullDetailsResult.customer.name}</div>
+											<div><span className="font-semibold">Contact:</span> {fullDetailsResult.customer.contact}</div>
+											<div><span className="font-semibold">Email:</span> {fullDetailsResult.customer.email || '-'}</div>
+											<div><span className="font-semibold">Address:</span> {fullDetailsResult.customer.address || '-'}</div>
+											<div><span className="font-semibold">Date of Birth:</span> {fullDetailsResult.customer.dateOfBirth}</div>
+											<div><span className="font-semibold">Paid:</span> {fullDetailsResult.customer.paid}</div>
+											<div><span className="font-semibold">Due:</span> {fullDetailsResult.customer.due}</div>
+											<div><span className="font-semibold">Credit:</span> {fullDetailsResult.customer.credit}</div>
+											<div><span className="font-semibold">Status:</span> {fullDetailsResult.customer.status}</div>
+											<div><span className="font-semibold">Created:</span> {fullDetailsResult.customer.created_at ? new Date(fullDetailsResult.customer.created_at).toLocaleString() : '-'}</div>
+										</div>
+										{Array.isArray(fullDetailsResult.customer.purchases) && fullDetailsResult.customer.purchases.length > 0 && (
+											<div className="mt-2">
+												<span className="font-semibold">Purchases:</span>
+												<ul className="list-disc ml-6">
+													{fullDetailsResult.customer.purchases.map((p, i) => (
+														<li key={i}>{p.date} - {p.item} x{p.quantity}</li>
+													))}
+												</ul>
+											</div>
+										)}
+									</div>
+								)}
+								{/* Pay in Terms Section */}
+								{fullDetailsResult.payTerms && fullDetailsResult.payTerms.length > 0 && (
+									<div className="bg-[#f8fbff] rounded-lg p-4 border border-[#e0eefa]">
+										<h3 className="text-lg font-bold text-[#03648a] mb-2">Pay in Terms</h3>
+										{fullDetailsResult.payTerms.map((pt, idx) => (
+											<div key={pt.id || idx} className="mb-2 border-b border-[#e0eefa] pb-2">
+												<div><span className="font-semibold">Credit Limit:</span> {pt.creditLimit}</div>
+												<div><span className="font-semibold">Credit Used:</span> {pt.creditUsed}</div>
+												<div><span className="font-semibold">Term Duration:</span> {pt.termDuration}</div>
+												<div><span className="font-semibold">Payment Cycle:</span> {pt.paymentCycle}</div>
+												<div><span className="font-semibold">Invoice Date:</span> {pt.invoice_date ? new Date(pt.invoice_date).toLocaleDateString() : '-'}</div>
+												<div><span className="font-semibold">Due Date:</span> {pt.due_date ? new Date(pt.due_date).toLocaleDateString() : '-'}</div>
+											</div>
+										))}
+									</div>
+								)}
+								{/* Returns & Refunds Section */}
+								{fullDetailsResult.returns && fullDetailsResult.returns.length > 0 && (
+									<div className="bg-[#f8fbff] rounded-lg p-4 border border-[#e0eefa]">
+										<h3 className="text-lg font-bold text-[#03648a] mb-2">Returns & Refunds</h3>
+										{fullDetailsResult.returns.map((rf, idx) => (
+											<div key={rf.id || idx} className="mb-2 border-b border-[#e0eefa] pb-2">
+												<div><span className="font-semibold">Date:</span> {rf.date ? new Date(rf.date).toLocaleDateString() : '-'}</div>
+												<div><span className="font-semibold">Item:</span> {rf.item_name || rf.item || '-'}</div>
+												<div><span className="font-semibold">Quantity:</span> {rf.quantity}</div>
+												<div><span className="font-semibold">Amount:</span> {rf.amount}</div>
+												<div><span className="font-semibold">Reason:</span> {rf.reason}</div>
+											</div>
+										))}
+									</div>
+								)}
+								{(!fullDetailsResult.customer && (!fullDetailsResult.payTerms || fullDetailsResult.payTerms.length === 0) && (!fullDetailsResult.returns || fullDetailsResult.returns.length === 0)) && (
+									<div className="text-gray-500">No details found for this customer.</div>
+								)}
+							</>
+						)}
+					</div>
+				)}
+			</div>
 			<div className="flex justify-between items-center mb-6">
-				<h1 className="text-2xl font-semibold text-[#0492C2]">Customers</h1>
-				{activeTab === 'table' && (
+				<div className="flex items-center space-x-4">
+					<h1 className="text-2xl font-semibold text-[#0492C2]">Customers</h1>
+					<button
+						onClick={() => setShowNotifications(!showNotifications)}
+						className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${showNotifications 
+							? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white' 
+							: 'bg-white text-[#0492C2] border border-[#b6e0fe] hover:bg-[#f0f9ff]'}`}
+					>
+						<BellRing className="w-4 h-4" />
+						{showNotifications ? 'Hide Notifications' : 'Manage Notifications'}
+					</button>
+				</div>
+				{!showNotifications && activeTab === 'table' && (
 					<button
 						className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white rounded-lg font-semibold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition"
 						onClick={() => {
@@ -184,7 +348,7 @@ export default function Customers() {
 								viber: false,
 								email: '',
 								address: '',
-								joinedDate: '',
+								dateOfBirth: '',
 								paid: '',
 								due: '',
 								status: 'Active',
@@ -192,7 +356,7 @@ export default function Customers() {
 							});
 						}}
 					>
-						<PlusIcon className="w-5 h-5" />
+						<Plus className="w-5 h-5" />
 						Customer
 					</button>
 				)}
@@ -202,7 +366,7 @@ export default function Customers() {
 						type="button"
 						onClick={() => setShowAddTermsForm(true)}
 					>
-						<PlusIcon className="w-5 h-5" />
+						<Plus className="w-5 h-5" />
 						Terms
 					</button>
 				)}
@@ -212,12 +376,11 @@ export default function Customers() {
 						type="button"
 						onClick={() => setShowAddRefundForm(true)}
 					>
-						<PlusIcon className="w-5 h-5" />
+						<Plus className="w-5 h-5" />
 						Refund
 					</button>
 				)}
 			</div>
-			{/* Tabs */}
 			<div className="flex gap-2 mb-4">
 				<button
 					className={`px-4 py-2 rounded-lg font-semibold text-sm shadow transition-all duration-200 ${
@@ -256,7 +419,7 @@ export default function Customers() {
 					<div className="flex flex-wrap items-center justify-between pb-2 border-b border-[#e0eefa] mb-4">
 						<h2 className="text-xl font-bold text-[#03648a] flex items-center gap-3">
 							<div className="w-9 h-9 rounded-lg bg-gradient-to-r from-[#0492C2]/90 to-[#b6e0fe]/90 flex items-center justify-center shadow">
-								<PlusIcon className="h-5 w-5 text-white" />
+								<Plus className="h-5 w-5 text-white" />
 							</div>
 							<span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0492C2] to-[#b6e0fe]">
 								{editCustomer ? 'Edit Customer' : 'Add New Customer'}
@@ -290,7 +453,7 @@ export default function Customers() {
 									className="w-full px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition"
 									value={newCustomer.contact}
 									onChange={handleInputChange}
-									placeholder="Phone number"
+									placeholder="Phone number (e.g., +94763601990)"
 								/>
 								<div className="flex gap-3 mt-2">
 									<label className="flex items-center gap-1 text-xs">
@@ -326,12 +489,12 @@ export default function Customers() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<label className="block text-sm font-medium text-[#03648a] mb-1">Joined Date</label>
+								<label className="block text-sm font-medium text-[#03648a] mb-1">Date of Birth</label>
 								<input
 									type="date"
-									name="joinedDate"
+									name="dateOfBirth"
 									className="w-full px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition"
-									value={newCustomer.joinedDate}
+									value={newCustomer.dateOfBirth}
 									onChange={handleInputChange}
 								/>
 							</div>
@@ -427,7 +590,7 @@ export default function Customers() {
 									className="flex items-center text-[#0492C2] hover:underline text-sm mt-2"
 									onClick={addPurchaseRow}
 								>
-									<PlusIcon className="w-4 h-4 mr-1" />
+									<Plus className="w-4 h-4 mr-1" />
 									Add Purchase
 								</button>
 							</div>
@@ -453,130 +616,148 @@ export default function Customers() {
 					</form>
 				</div>
 			)}
-			{/* Customer Table Tab */}
-			{activeTab === 'table' && (
-				<div className={`overflow-x-auto rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8 transition-all duration-300 ${showAddModal ? 'opacity-30 pointer-events-none select-none blur-sm' : ''}`}>
-					<table className="min-w-full text-[11px] md:text-xs border-separate border-spacing-y-2">
-						<thead className="bg-[#e4f4fa] text-[#0492C2]">
-							<tr>
-								<th className="px-2 py-2 font-semibold text-center">SN</th>
-								<th className="px-2 py-2 font-semibold text-center">Customer Name</th>
-								<th className="px-2 py-2 font-semibold text-center">Contact No</th>
-								<th className="px-2 py-2 font-semibold text-center">Joined Date</th>
-								<th className="px-2 py-2 font-semibold text-center">Paid</th>
-								<th className="px-2 py-2 font-semibold text-center">Due</th>
-								<th className="px-2 py-2 font-semibold text-center">Credit</th>
-								<th className="px-2 py-2 font-semibold text-center">Status</th>
-								<th className="px-2 py-2 font-semibold text-center">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{loading ? (
-								<tr>
-									<td colSpan={9} className="text-center py-6 text-[#0492C2] font-semibold">
-										Loading...
-									</td>
-								</tr>
-							) : customers.length === 0 ? (
-								<tr>
-									<td colSpan={9} className="text-center py-6 text-gray-400">
-										No customers found.
-									</td>
-								</tr>
-							) : (
-								customers.map((c, idx) => (
-									<tr
-										key={c.id}
-										className="items-table-row group transition-all duration-200 align-middle"
-									>
-										<td className="text-center align-middle font-bold text-[#0492C2]">{idx + 1}</td>
-										<td className="text-center align-middle text-[#03648a]">{c.name}</td>
-										<td className="text-center align-middle text-[#03648a]">
-											{c.contact}
-										</td>
-										<td className="text-center align-middle text-[#03648a]">{c.joinedDate}</td>
-										<td className="text-center align-middle font-semibold text-[#3bb6e7]">
-											{c.paid ? `LKR ${Number(c.paid).toLocaleString()}` : '-'}
-										</td>
-										<td className="text-center align-middle font-semibold text-[#5dc6e7]">
-											{c.due ? `LKR ${Number(c.due).toLocaleString()}` : '-'}
-										</td>
-										<td className="text-center align-middle font-semibold text-[#0492C2]">
-											{c.credit ? `LKR ${Number(c.credit).toLocaleString()}` : '-'}
-										</td>
-										<td className="text-center align-middle">
-											<span
-												className={`px-2 py-1 rounded-full text-xs font-bold ${
-													c.status === 'Active'
-														? 'bg-[#e0f7fa] text-[#0492C2]'
-														: c.status === 'Inactive'
-															? 'bg-[#b6e0fe] text-[#03648a]'
-															: 'bg-[#b6e0fe]/60 text-[#03648a]/80'
-												}`}
-											>
-												{c.status}
-											</span>
-										</td>
-										<td className="text-center align-middle">
-											<div className="flex gap-1 justify-center items-center">
-												<button
-													className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-													title="View"
-													onClick={async () => {
-														await fetchCustomerById(c.id);
-													}}
-												>
-													<EyeIcon className="w-4 h-4 drop-shadow" />
-												</button>
-												<button
-													className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-													title="Edit"
-													onClick={() => handleEditCustomer(c)}
-												>
-													<PencilIcon className="w-4 h-4 drop-shadow" />
-												</button>
-												<button
-													className="action-btn-3d bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-400 text-red-400 hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-													title="Delete"
-													onClick={() => handleDeleteCustomer(c.id)}
-												>
-													<TrashIcon className="w-4 h-4 drop-shadow" />
-												</button>
-											</div>
-										</td>
-									</tr>
-								))
-							)}
-						</tbody>
-					</table>
-					<style>{`
-						.items-table-row {
-							border-radius: 18px !important;
-							background: #fff !important;
-							margin-bottom: 14px !important;
-							box-shadow: 0 6px 24px 0 rgba(4,146,194,0.10), 0 1.5px 4px 0 rgba(4,146,194,0.06) !important;
-							border: 1.5px solid #e0eefa !important;
-							transition: 
-								box-shadow 0.25s cubic-bezier(.4,0,.2,1),
-								transform 0.25s cubic-bezier(.4,0,.2,1),
-								background 0.2s;
-						}
-						.items-table-row:hover {
-							box-shadow: 0 12px 32px 0 rgba(4,146,194,0.18), 0 3px 12px 0 rgba(4,146,194,0.10) !important;
-							transform: translateY(-4px) scale(1.025);
-							background: #f8fbff !important;
-							z-index: 2;
-						}
-						.action-btn-3d {
-							transition: all 0.2s ease;
-							transform: translateY(0);
-						}
-						.action-btn-3d:hover {
-							transform: translateY(-2px);
-							box-shadow: 0 4px 6px rgba(4, 146, 194, 0.2);
-						}
-					`}</style>
+			{/* Main Content */}
+			{showNotifications ? (
+				<div className="bg-white rounded-lg border border-[#b6e0fe] shadow p-6">
+					<NotificationAdmin />
 				</div>
+			) : (
+				<>
+					{activeTab === 'table' && (
+						<div className={`overflow-x-auto rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8 transition-all duration-300 ${showAddModal ? 'opacity-30 pointer-events-none select-none blur-sm' : ''}`}>
+							<table className="min-w-full text-[11px] md:text-xs border-separate border-spacing-y-2">
+								<thead className="bg-[#e4f4fa] text-[#0492C2]">
+									<tr>
+										<th className="px-2 py-2 font-semibold text-center">SN</th>
+										<th className="px-2 py-2 font-semibold text-center">Customer Name</th>
+										<th className="px-2 py-2 font-semibold text-center">Contact No</th>
+										<th className="px-2 py-2 font-semibold text-center">Date of Birth</th>
+										<th className="px-2 py-2 font-semibold text-center">Paid</th>
+										<th className="px-2 py-2 font-semibold text-center">Due</th>
+										<th className="px-2 py-2 font-semibold text-center">Credit</th>
+										<th className="px-2 py-2 font-semibold text-center">Status</th>
+										<th className="px-2 py-2 font-semibold text-center">Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									{loading ? (
+										<tr>
+											<td colSpan={9} className="text-center py-6 text-[#0492C2] font-semibold">
+												Loading...
+											</td>
+										</tr>
+									) : customers.length === 0 ? (
+										<tr>
+											<td colSpan={9} className="text-center py-6 text-gray-400">
+												No customers found.
+											</td>
+										</tr>
+									) : (
+										customers.map((c, idx) => (
+											<tr
+												key={c.id}
+												className="items-table-row group transition-all duration-200 align-middle"
+											>
+												<td className="text-center align-middle font-bold text-[#0492C2]">{idx + 1}</td>
+												<td className="text-center align-middle text-[#03648a]">{c.name}</td>
+												<td className="text-center align-middle text-[#03648a]">
+													{c.contact}
+												</td>
+												<td className="text-center align-middle text-[#03648a]">{c.dateOfBirth}</td>
+												<td className="text-center align-middle font-semibold text-[#3bb6e7]">
+													{c.paid ? `LKR ${Number(c.paid).toLocaleString()}` : '-'}
+												</td>
+												<td className="text-center align-middle font-semibold text-[#5dc6e7]">
+													{c.due ? `LKR ${Number(c.due).toLocaleString()}` : '-'}
+												</td>
+												<td className="text-center align-middle font-semibold text-[#0492C2]">
+													{c.credit ? `LKR ${Number(c.credit).toLocaleString()}` : '-'}
+												</td>
+												<td className="text-center align-middle">
+													<span
+														className={`px-2 py-1 rounded-full text-xs font-bold ${
+															c.status === 'Active'
+																? 'bg-[#e0f7fa] text-[#0492C2]'
+																: c.status === 'Inactive'
+																	? 'bg-[#b6e0fe] text-[#03648a]'
+																	: 'bg-[#b6e0fe]/60 text-[#03648a]/80'
+														}`}
+													>
+														{c.status}
+													</span>
+												</td>
+												<td className="text-center align-middle">
+													<div className="flex gap-1 justify-center items-center">
+														<button
+															className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
+															title="View"
+															onClick={async () => {
+																await fetchCustomerById(c.id);
+															}}
+														>
+															<Eye className="w-4 h-4 drop-shadow" />
+														</button>
+														<button
+															className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
+															title="Edit"
+															onClick={() => handleEditCustomer(c)}
+														>
+															<Edit className="w-4 h-4 drop-shadow" />
+														</button>
+														<button
+															className="action-btn-3d bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-400 text-red-400 hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
+															title="Delete"
+															onClick={() => handleDeleteCustomer(c.id)}
+														>
+															<Trash2 className="w-4 h-4 drop-shadow" />
+														</button>
+														<button
+  className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
+  title="Notify"
+  onClick={() => {
+    setSelectedCustomer(c);
+    setShowNotificationModal(true);
+  }}
+>
+  <Bell className="w-4 h-4 drop-shadow" />
+</button>
+													</div>
+												</td>
+											</tr>
+										))
+									)}
+								</tbody>
+							</table>
+							<style>{`
+								.items-table-row {
+									border-radius: 18px !important;
+									background: #fff !important;
+									margin-bottom: 14px !important;
+									box-shadow: 0 6px 24px 0 rgba(4,146,194,0.10), 0 1.5px 4px 0 rgba(4,146,194,0.06) !important;
+									border: 1.5px solid #e0eefa !important;
+									transition: 
+										box-shadow 0.25s cubic-bezier(.4,0,.2,1),
+										transform 0.25s cubic-bezier(.4,0,.2,1),
+										background 0.2s;
+								}
+								.items-table-row:hover {
+									box-shadow: 0 12px 32px 0 rgba(4,146,194,0.18), 0 3px 12px 0 rgba(4,146,194,0.10) !important;
+									transform: translateY(-4px) scale(1.025);
+									background: #f8fbff !important;
+									z-index: 2;
+								}
+								.action-btn-3d {
+									transition: all 0.2s ease;
+									transform: translateY(0);
+								}
+								.action-btn-3d:hover {
+									transform: translateY(-2px);
+									box-shadow: 0 4px 6px rgba(4, 146, 194, 0.2);
+								}
+							`}</style>
+						</div>
+					)}
+				</>
 			)}
 			{/* Pay in Terms Tab */}
 			{activeTab === 'terms' && (
@@ -592,19 +773,36 @@ export default function Customers() {
 					<div className="bg-white rounded-xl shadow-xl border border-[#b6e0fe] p-6 max-w-lg w-full">
 						<div className="flex justify-between items-start mb-4">
 							<h2 className="text-xl font-bold text-[#0492C2]">Customer Details</h2>
-							<button
-								onClick={() => setViewCustomer(null)}
-								className="text-gray-500 hover:text-gray-700"
-							>
-								<span className="text-2xl">&times;</span>
-							</button>
+							<div className="flex gap-2">
+								<button
+									onClick={() => handleDeleteCustomer(viewCustomer.id)}
+									className="text-red-500 hover:text-red-700"
+								>
+									<Trash2 className="w-5 h-5" />
+								</button>
+								<button
+									onClick={() => {
+										setSelectedCustomer(viewCustomer);
+										setShowNotificationModal(true);
+									}}
+									className="text-blue-500 hover:text-blue-700"
+								>
+									<Bell className="w-5 h-5" />
+								</button>
+								<button
+									onClick={() => setViewCustomer(null)}
+									className="text-gray-500 hover:text-gray-700"
+								>
+									<X className="w-5 h-5" />
+								</button>
+							</div>
 						</div>
 						<div className="space-y-2">
 							<div><span className="font-semibold text-[#03648a]">Name:</span> {viewCustomer.name}</div>
 							<div><span className="font-semibold text-[#03648a]">Contact:</span> {viewCustomer.contact} {viewCustomer.whatsapp && <span className="ml-1 text-[#3bb6e7]">🟦 WhatsApp</span>} {viewCustomer.viber && <span className="ml-1 text-[#5dc6e7]">🟦 Viber</span>}</div>
 							<div><span className="font-semibold text-[#03648a]">Email:</span> {viewCustomer.email || '-'}</div>
 							<div><span className="font-semibold text-[#03648a]">Address:</span> {viewCustomer.address || '-'}</div>
-							<div><span className="font-semibold text-[#03648a]">Joined Date:</span> {viewCustomer.joinedDate}</div>
+							<div><span className="font-semibold text-[#03648a]">Date of Birth:</span> {viewCustomer.dateOfBirth}</div>
 							<div><span className="font-semibold text-[#03648a]">Paid:</span> <span className="text-[#3bb6e7]">{viewCustomer.paid ? `LKR ${Number(viewCustomer.paid).toLocaleString()}` : '-'}</span></div>
 							<div><span className="font-semibold text-[#03648a]">Due:</span> <span className="text-[#5dc6e7]">{viewCustomer.due ? `LKR ${Number(viewCustomer.due).toLocaleString()}` : '-'}</span></div>
 							<div><span className="font-semibold text-[#03648a]">Status:</span> <span className={
@@ -638,6 +836,11 @@ export default function Customers() {
 					</div>
 				</div>
 			)}
+			<NotificationModal
+				isOpen={showNotificationModal}
+				onClose={() => setShowNotificationModal(false)}
+				customerId={selectedCustomer?.id}
+			/>
 		</div>
 	);
 }

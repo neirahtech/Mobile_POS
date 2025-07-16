@@ -11,6 +11,7 @@ import api from '../utils/axios';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid, Legend } from 'recharts';
 import InventoryGraphs from '../components/InventoryGraphs';
 import CustomerGraphs from '../components/CustomerGraphs';
+import ExpensesReport from '../components/ExpensesReport';
 
 const reportTypes = [
   {
@@ -30,6 +31,12 @@ const reportTypes = [
     name: 'Customer Report',
     description: 'Analyze customer behavior and preferences',
     icon: ChartBarIcon
+  },
+  {
+    id: 'expenses',
+    name: 'Expenses Report',
+    description: 'Analyze and export expense records',
+    icon: ArrowDownTrayIcon
   }
 ];
 
@@ -116,6 +123,7 @@ export default function Reports() {
   const [customerData, setCustomerData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [grnData, setGrnData] = useState([]);
+  const [expensesData, setExpensesData] = useState([]);
 
   // Fetch all data on mount
   useEffect(() => {
@@ -123,9 +131,10 @@ export default function Reports() {
     Promise.all([
       api.get('/sales-details'),
       api.get('/grn'),
-      api.get('/customers')
+      api.get('/customers'),
+      api.get('/expenses')
     ])
-      .then(([salesRes, grnRes, customersRes]) => {
+      .then(([salesRes, grnRes, customersRes, expensesRes]) => {
         setSalesData(salesRes.data || []);
         setGrnData(Array.isArray(grnRes.data) ? grnRes.data : []);
         // --- Inventory calculation using only GRN table for item names and stock qty ---
@@ -165,6 +174,7 @@ export default function Reports() {
         });
         setInventoryData(inventoryRows);
         setCustomerData(customersRes.data || []);
+        setExpensesData(expensesRes.data || []);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -894,6 +904,9 @@ export default function Reports() {
             salesData={filteredSales}
           />
         </div>
+      )}
+      {selectedReport === 'expenses' && (
+        <ExpensesReport expensesData={expensesData} loading={loading} timeRange={timeRange} />
       )}
     </div>
   );

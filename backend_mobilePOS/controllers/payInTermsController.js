@@ -3,13 +3,14 @@ const db = require('../db');
 // Create Pay in Terms customer
 exports.createPayInTerms = async (req, res) => {
   try {
-    const { name, contact, creditLimit, termDuration, creditUsed, paymentCycle, branch_id } = req.body;
-    if (!name || !contact || !creditLimit || !termDuration || !paymentCycle || !branch_id) {
+    const { name, contact, creditLimit, termDuration, creditUsed, paymentCycleNumber, paymentCycleUnit, invoice_date, due_date, branch_id } = req.body;
+    const paymentCycle = `${paymentCycleNumber} ${paymentCycleUnit}`;
+    if (!name || !contact || !creditLimit || !termDuration || !paymentCycle || !invoice_date || !due_date || !branch_id) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     await db.execute(
-      'INSERT INTO pay_in_terms (name, contact, creditLimit, termDuration, creditUsed, paymentCycle, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, contact, creditLimit, termDuration, creditUsed || 0, paymentCycle, branch_id]
+      'INSERT INTO pay_in_terms (name, contact, creditLimit, termDuration, creditUsed, paymentCycle, invoice_date, due_date, branch_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, contact, creditLimit, termDuration, creditUsed || 0, paymentCycle, invoice_date, due_date, branch_id]
     );
     res.status(201).json({ message: 'Pay in Terms customer created' });
   } catch (err) {
@@ -47,10 +48,11 @@ exports.getPayInTermsById = async (req, res) => {
 exports.updatePayInTermsById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, contact, creditLimit, termDuration, creditUsed, paymentCycle } = req.body;
+    const { name, contact, creditLimit, termDuration, creditUsed, paymentCycleNumber, paymentCycleUnit, invoice_date, due_date } = req.body;
+    const paymentCycle = `${paymentCycleNumber} ${paymentCycleUnit}`;
     const [result] = await db.execute(
-      'UPDATE pay_in_terms SET name=?, contact=?, creditLimit=?, termDuration=?, creditUsed=?, paymentCycle=? WHERE id=?',
-      [name, contact, creditLimit, termDuration, creditUsed || 0, paymentCycle, id]
+      'UPDATE pay_in_terms SET name=?, contact=?, creditLimit=?, termDuration=?, creditUsed=?, paymentCycle=?, invoice_date=?, due_date=? WHERE id=?',
+      [name, contact, creditLimit, termDuration, creditUsed, paymentCycle, invoice_date, due_date, id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Pay in Terms customer not found' });
     res.json({ message: 'Pay in Terms customer updated' });

@@ -5,6 +5,8 @@ const db = require('./db');
 const categoryRoutes = require('./routes/categoryRoutes');
 const itemsRoutes = require('./routes/itemsRoutes');
 const variantRoutes = require('./routes/variantRoutes');
+const payInTermsRoutes = require('./routes/payInTermsRoutes');
+const paymentHistoryRoutes = require('./routes/paymentHistoryRoutes');
 const path = require('path');
 
 const app = express();
@@ -21,6 +23,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/categories', categoryRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/variants', variantRoutes);
+app.use('/api/pay-in-terms', payInTermsRoutes);
+app.use('/api/payments', paymentHistoryRoutes);
 
 // Test route
 app.get('/', (req, res) => {

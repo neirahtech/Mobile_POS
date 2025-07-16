@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilIcon, TrashIcon, CurrencyDollarIcon, CalendarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import api from '../utils/axios';
+
+// Helper function to format date
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+};
 
 export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
   const [payInTermsCustomers, setPayInTermsCustomers] = useState([]);
@@ -11,15 +22,45 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
     creditLimit: '',
     termDuration: '',
     creditUsed: '',
-    paymentCycle: '',
+    paymentCycleNumber: '',
+    paymentCycleUnit: 'days',
+    invoice_date: '',
+    due_date: ''
   });
   const [viewCustomer, setViewCustomer] = useState(null);
   const [editCustomer, setEditCustomer] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [paymentForm, setPaymentForm] = useState({
+    payment_date: new Date().toISOString().split('T')[0],
+    amount: '',
+    notes: ''
+  });
 
   // Fetch all Pay in Terms customers from backend
   useEffect(() => {
     fetchPayInTerms();
   }, []);
+
+  // Fetch payment history when viewing a customer
+  useEffect(() => {
+    if (viewCustomer?.id && viewCustomer?.branch_id) {
+      fetchPaymentHistory(viewCustomer.id, viewCustomer.branch_id);
+    }
+  }, [viewCustomer]);
+
+  // Fetch payment history for a customer and branch
+  const fetchPaymentHistory = async (customerId, branchId) => {
+    try {
+      const response = await api.get(`/payment-history/${customerId}`, {
+        params: { branch_id: branchId }
+      });
+      setPaymentHistory(response.data);
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      setPaymentHistory([]);
+    }
+  };
 
   const fetchPayInTerms = async () => {
     setLoading(true);
@@ -33,13 +74,138 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
     }
   };
 
+  // Handle payment form input changes
+  const handlePaymentInputChange = (e) => {
+    const { name, value } = e.target;
+    setPaymentForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Calculate next due date based on payment cycle
+  const calculateNextDueDate = (paymentDate) => {
+    if (!viewCustomer?.paymentCycle) return paymentDate;
+    
+    const date = new Date(paymentDate);
+    const paymentCycle = viewCustomer.paymentCycle;
+    
+    // Parse the payment cycle (e.g., "30 days", "1 month")
+    const [value, unit] = paymentCycle.split(' ');
+    const numValue = parseInt(value, 10);
+    
+    if (unit.includes('day')) {
+      date.setDate(date.getDate() + numValue);
+    } else if (unit.includes('week')) {
+      date.setDate(date.getDate() + (numValue * 7));
+    } else if (unit.includes('month')) {
+      date.setMonth(date.getMonth() + numValue);
+    } else if (unit.includes('year')) {
+      date.setFullYear(date.getFullYear() + numValue);
+    }
+    
+    return date.toISOString().split('T')[0];
+  };
+
+  // Handle payment submission
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!viewCustomer?.id || !viewCustomer?.branch_id) return;
+
+    try {
+      await api.post('/payment-history', {
+        pay_in_terms_id: viewCustomer.id,
+        payment_date: paymentForm.payment_date,
+        amount: parseFloat(paymentForm.amount),
+        notes: paymentForm.notes,
+        branch_id: viewCustomer.branch_id
+      });
+
+      // Refresh data
+      fetchPayInTerms();
+      fetchPaymentHistory(viewCustomer.id, viewCustomer.branch_id);
+
+      // Reset form and close modal
+      setPaymentForm({
+        payment_date: new Date().toISOString().split('T')[0],
+        amount: '',
+        notes: ''
+      });
+      setShowPaymentModal(false);
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      alert('Failed to record payment. Please try again.');
+    }
+  };
+
+  // Delete a payment
+  const handleDeletePayment = async (paymentId) => {
+    if (!window.confirm('Are you sure you want to delete this payment record?')) return;
+
+    try {
+      await api.delete(`/payment-history/${paymentId}`);
+      if (viewCustomer?.id && viewCustomer?.branch_id) {
+        fetchPaymentHistory(viewCustomer.id, viewCustomer.branch_id);
+        fetchPayInTerms();
+      }
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      alert('Failed to delete payment record.');
+    }
+  };
+
+  // Calculate due date based on invoice date and term duration
+  const calculateDueDate = (invoiceDate, termDuration, unit) => {
+    if (!invoiceDate || !termDuration) return '';
+    
+    const date = new Date(invoiceDate);
+    const duration = parseInt(termDuration) || 0;
+    
+    switch(unit) {
+      case 'days':
+        date.setDate(date.getDate() + duration);
+        break;
+      case 'weeks':
+        date.setDate(date.getDate() + (duration * 7));
+        break;
+      case 'months':
+        date.setMonth(date.getMonth() + duration);
+        break;
+      case 'years':
+        date.setFullYear(date.getFullYear() + duration);
+        break;
+      default:
+        date.setDate(date.getDate() + duration);
+    }
+    
+    return date.toISOString().split('T')[0];
+  };
+
   // Handle input change for add/edit form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const newForm = {
+      ...form,
+      [name]: value
+    };
+
+    // Update the form
+    setForm(newForm);
+
+    // Auto-calculate due date when relevant fields change
+    if (name === 'invoice_date' || name === 'paymentCycleNumber' || name === 'paymentCycleUnit' || name === 'termDuration') {
+      if (newForm.invoice_date) {
+        const dueDate = calculateDueDate(
+          newForm.invoice_date,
+          name === 'termDuration' ? value : newForm.termDuration,
+          name === 'paymentCycleUnit' ? value : newForm.paymentCycleUnit
+        );
+        setForm(prev => ({
+          ...prev,
+          due_date: dueDate
+        }));
+      }
+    }
   };
 
   // Add or update Pay in Terms customer
@@ -67,7 +233,10 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
         creditLimit: '',
         termDuration: '',
         creditUsed: '',
-        paymentCycle: '',
+        paymentCycleNumber: '',
+        paymentCycleUnit: 'days',
+        invoice_date: '',
+        due_date: ''
       });
       fetchPayInTerms();
     } catch (err) {
@@ -92,27 +261,44 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
     try {
       const res = await api.get(`/pay-in-terms/${c.id}`);
       setViewCustomer(res.data);
+      setShowPaymentModal(false);
     } catch (err) {
+      console.error('Error fetching customer details:', err);
       setViewCustomer(null);
     }
   };
 
   // Edit details
-  const handleEdit = (c) => {
-    setEditCustomer(c);
+  const handleEdit = (customer) => {
+    setEditCustomer(customer);
     setShowAddForm(true);
+    
+    // Parse the existing payment cycle (format: "30 days" or "1 month" etc.)
+    const paymentCycleMatch = customer.paymentCycle ? customer.paymentCycle.match(/(\d+)\s*(\w+)/) : null;
+    const paymentCycleNumber = paymentCycleMatch ? paymentCycleMatch[1] : '';
+    const paymentCycleUnit = paymentCycleMatch ? 
+      (paymentCycleMatch[2].toLowerCase().includes('year') ? 'years' : 
+       paymentCycleMatch[2].toLowerCase().includes('month') ? 'months' :
+       paymentCycleMatch[2].toLowerCase().includes('week') ? 'weeks' : 'days') : 'days';
+    
     setForm({
-      name: c.name,
-      contact: c.contact,
-      creditLimit: c.creditLimit,
-      termDuration: c.termDuration,
-      creditUsed: c.creditUsed,
-      paymentCycle: c.paymentCycle,
+      name: customer.name,
+      contact: customer.contact,
+      creditLimit: customer.creditLimit,
+      termDuration: customer.termDuration,
+      creditUsed: customer.creditUsed,
+      paymentCycleNumber,
+      paymentCycleUnit,
+      invoice_date: customer.invoice_date ? customer.invoice_date.split('T')[0] : '',
+      due_date: customer.due_date ? customer.due_date.split('T')[0] : ''
     });
   };
 
+  // Calculate total paid amount
+  const totalPaid = paymentHistory.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
   return (
-    <div>
+    <div className="space-y-6">
       {showAddForm && (
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-lg mx-auto p-8 border border-[#b6e0fe] mb-8 animate-fade-in relative z-20">
           <div className="flex flex-wrap items-center justify-between pb-2 border-b border-[#e0eefa] mb-4">
@@ -191,14 +377,52 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-[#03648a] mb-1">Payment Cycle</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    name="paymentCycleNumber"
+                    required
+                    className="w-1/2 px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition"
+                    value={form.paymentCycleNumber}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 30"
+                    min="1"
+                  />
+                  <select
+                    name="paymentCycleUnit"
+                    className="w-1/2 px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition bg-white"
+                    value={form.paymentCycleUnit}
+                    onChange={handleInputChange}
+                  >
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months">Months</option>
+                    <option value="years">Years</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[#03648a] mb-1">Invoice Date</label>
                 <input
-                  type="text"
-                  name="paymentCycle"
+                  type="date"
+                  name="invoice_date"
                   required
                   className="w-full px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition"
-                  value={form.paymentCycle}
+                  value={form.invoice_date}
                   onChange={handleInputChange}
-                  placeholder="e.g. Monthly"
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[#03648a] mb-1">Due Date</label>
+                <input
+                  type="date"
+                  name="due_date"
+                  required
+                  className="w-full px-4 py-2.5 border rounded-lg border-[#e0eefa] hover:border-[#b6e0fe] focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition"
+                  value={form.due_date}
+                  onChange={handleInputChange}
+                  min={form.invoice_date}
                 />
               </div>
             </div>
@@ -216,6 +440,8 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
                     termDuration: '',
                     creditUsed: '',
                     paymentCycle: '',
+                    invoice_date: '',
+                    due_date: ''
                   });
                 }}
               >
@@ -242,19 +468,21 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
               <th className="px-2 py-2 font-semibold text-center">Term Duration</th>
               <th className="px-2 py-2 font-semibold text-center">Total Credit Used</th>
               <th className="px-2 py-2 font-semibold text-center">Payment Cycle</th>
+              <th className="px-2 py-2 font-semibold text-center">Invoice Date</th>
+              <th className="px-2 py-2 font-semibold text-center">Due Date</th>
               <th className="px-2 py-2 font-semibold text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-[#0492C2] font-semibold">
+                <td colSpan={10} className="text-center py-6 text-[#0492C2] font-semibold">
                   Loading...
                 </td>
               </tr>
             ) : payInTermsCustomers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-6 text-gray-400">
+                <td colSpan={10} className="text-center py-6 text-gray-400">
                   No pay in terms customers found.
                 </td>
               </tr>
@@ -267,7 +495,11 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
                   <td className="text-center align-middle text-[#03648a]">LKR {Number(c.creditLimit).toLocaleString()}</td>
                   <td className="text-center align-middle text-[#03648a]">{c.termDuration}</td>
                   <td className="text-center align-middle text-[#03648a]">LKR {Number(c.creditUsed).toLocaleString()}</td>
-                  <td className="text-center align-middle text-[#03648a]">{c.paymentCycle}</td>
+                  <td className="text-center align-middle text-[#03648a] whitespace-nowrap">
+                    {c.paymentCycle}
+                  </td>
+                  <td className="text-center align-middle text-[#03648a]">{new Date(c.invoice_date).toLocaleDateString()}</td>
+                  <td className="text-center align-middle text-[#03648a]">{new Date(c.due_date).toLocaleDateString()}</td>
                   <td className="text-center align-middle">
                     <div className="flex gap-1 justify-center items-center">
                       <button
@@ -301,29 +533,132 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
       </div>
       {/* View Modal */}
       {viewCustomer && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl border border-[#b6e0fe] p-6 max-w-lg w-full">
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-bold text-[#0492C2]">Pay in Terms Customer Details</h2>
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl border border-[#b6e0fe] p-6 w-full max-w-4xl my-8">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-[#03648a]">{viewCustomer.name}</h2>
+                <p className="text-gray-600">{viewCustomer.contact}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Credit Limit</div>
+                <div className="text-lg font-semibold text-[#0492C2]">LKR {Number(viewCustomer.creditLimit).toLocaleString()}</div>
+                <div className="mt-2 text-sm text-gray-500">Credit Used</div>
+                <div className="text-lg font-semibold text-red-500">LKR {Number(viewCustomer.creditUsed).toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-[#03648a] mb-3 border-b pb-2">Payment Terms</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Term Duration:</span>
+                    <span className="font-medium">{viewCustomer.termDuration}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Payment Cycle:</span>
+                    <span className="font-medium">{viewCustomer.paymentCycle}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Invoice Date:</span>
+                    <span className="font-medium">{formatDate(viewCustomer.invoice_date)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Due Date:</span>
+                    <span className={`font-medium ${new Date(viewCustomer.due_date) < new Date() ? 'text-red-500' : 'text-green-600'}`}>
+                      {formatDate(viewCustomer.due_date)}
+                      {new Date(viewCustomer.due_date) < new Date() && (
+                        <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Overdue</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-3 border-b pb-2">
+                  <h3 className="font-semibold text-[#03648a]">Payment Summary</h3>
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-[#0492C2] text-white text-sm rounded-md hover:bg-[#037ba1] transition"
+                  >
+                    <CurrencyDollarIcon className="h-4 w-4" />
+                    Record Payment
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Amount:</span>
+                    <span className="font-medium">LKR {Number(viewCustomer.creditLimit).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Paid:</span>
+                    <span className="font-medium text-green-600">LKR {totalPaid.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t pt-2 mt-2">
+                    <span>Balance:</span>
+                    <span className={totalPaid >= viewCustomer.creditLimit ? 'text-green-600' : 'text-red-500'}>
+                      LKR {(viewCustomer.creditLimit - totalPaid).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="font-semibold text-[#03648a] mb-3 border-b pb-2">Payment History</h3>
+              {paymentHistory.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Due Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paymentHistory.map((payment) => (
+                        <tr key={payment.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(payment.payment_date)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                            LKR {Number(payment.amount).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(payment.next_due_date)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {payment.notes || '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleDeletePayment(payment.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No payment history found.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setViewCustomer(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <span className="text-2xl">&times;</span>
-              </button>
-            </div>
-            <div className="space-y-2">
-              <div><span className="font-semibold text-[#03648a]">Name:</span> {viewCustomer.name}</div>
-              <div><span className="font-semibold text-[#03648a]">Contact:</span> {viewCustomer.contact}</div>
-              <div><span className="font-semibold text-[#03648a]">Credit Limit:</span> LKR {Number(viewCustomer.creditLimit).toLocaleString()}</div>
-              <div><span className="font-semibold text-[#03648a]">Term Duration:</span> {viewCustomer.termDuration}</div>
-              <div><span className="font-semibold text-[#03648a]">Credit Used:</span> LKR {Number(viewCustomer.creditUsed).toLocaleString()}</div>
-              <div><span className="font-semibold text-[#03648a]">Payment Cycle:</span> {viewCustomer.paymentCycle}</div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setViewCustomer(null)}
-                className="px-6 py-2 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white rounded-lg font-semibold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition"
+                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0492C2] transition"
               >
                 Close
               </button>
@@ -331,7 +666,89 @@ export default function PayInTerms({ onView, showAddForm, setShowAddForm }) {
           </div>
         </div>
       )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && viewCustomer && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#b6e0fe] p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-[#03648a]">Record Payment</h2>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <span className="text-2xl">&times;</span>
+              </button>
+            </div>
+            
+            <form onSubmit={handlePaymentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
+                <input
+                  type="date"
+                  name="payment_date"
+                  required
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-[#0492C2] focus:border-transparent"
+                  value={paymentForm.payment_date}
+                  onChange={handlePaymentInputChange}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (LKR)</label>
+                <input
+                  type="number"
+                  name="amount"
+                  required
+                  min="1"
+                  step="0.01"
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-[#0492C2] focus:border-transparent"
+                  value={paymentForm.amount}
+                  onChange={handlePaymentInputChange}
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="flex items-center text-sm text-blue-700">
+                  <InformationCircleIcon className="h-5 w-5 mr-2 flex-shrink-0" />
+                  <span>Next due date will be calculated automatically based on the payment cycle.</span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea
+                  name="notes"
+                  rows="2"
+                  className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-[#0492C2] focus:border-transparent"
+                  value={paymentForm.notes}
+                  onChange={handlePaymentInputChange}
+                  placeholder="Add any notes about this payment"
+                />
+              </div>
+              
+              <div className="pt-2 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-[#0492C2] hover:bg-[#037ba1] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#037ba1] transition"
+                >
+                  Record Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+        
 

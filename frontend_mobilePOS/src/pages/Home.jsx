@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import BillDetails from '../components/BillDetails.jsx';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { usePOS } from '../context/POSContext';
+import { useBranch } from '../context/BranchContext';
 import SalesDetails from '../components/SalesDetails.jsx';
 import api from '../utils/axios';
 
@@ -21,6 +22,7 @@ export default function Home() {
   const [showSalesDetails, setShowSalesDetails] = useState(false);
   const searchInputRef = useRef(null);
   const { isSidebarCollapsed } = usePOS();
+  const { selectedBranch } = useBranch();
 
   useEffect(() => {
     if (searchInputRef.current) {
@@ -56,129 +58,110 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Fetch and merge items, grn data, and sales data
     const fetchMenuItems = async () => {
       setLoadingMenuItems(true);
       setMenuItemsError(null);
       try {
-        // Fetch items
-        const itemsResponse = await api.get('/items');
-        const itemsData = itemsResponse.data;
-        const items = itemsData?.items || [];
-
-        // Fetch GRNs
-        const grnResponse = await api.get('/grn');
-        const grnData = grnResponse.data;
-        const grns = Array.isArray(grnData) ? grnData : grnData?.grns || [];
-
-        // Fetch Sales Details
-        const salesResponse = await api.get('/sales-details');
-        const salesData = salesResponse.data;
-        // salesData should be an array of sales, each with items: [{name, quantity}]
-        const sales = Array.isArray(salesData) ? salesData : [];
-
-        // Build maps for GRN quantities, latest prices, and discounts up to today
-        const qtyMap = {};
-        const priceMap = {};
-        const discountMap = {};
+        const branch_id = selectedBranch?.id || 1;
         const today = new Date().toISOString().slice(0, 10);
 
-        // Process GRNs up to today
-        [...grns].forEach(grn => {
-          // Only consider GRNs up to today
-          const grnDate = grn.invoice_date ? grn.invoice_date.slice(0, 10) : '';
-          if (grnDate && grnDate > today) return;
-          (grn.items || []).forEach(item => {
-            const code = item.item_code || item.code;
-            qtyMap[code] = (qtyMap[code] || 0) + Number(item.quantity || 0);
-            if (!priceMap[code] || grn.id > priceMap[code].grnId) {
-              priceMap[code] = {
-                price: item.retail_price || item.price || 0,
-                grnId: grn.id
-              };
-              discountMap[code] = {
-                discount: item.sale_discount || 0,
-                grnId: grn.id
-              };
-            }
-          });
-        });
+        // Fetch all items for the current branch
+        const itemsRes = await api.get('/items', { params: { branch_id } });
+        const items = itemsRes.data?.items || [];
 
-        // Build sales quantity map up to today
-        const salesQtyMap = {};
-        sales.forEach(sale => {
-          const saleDate = sale.date ? (typeof sale.date === 'string' ? sale.date.slice(0, 10) : new Date(sale.date).toISOString().slice(0, 10)) : '';
-          if (saleDate && saleDate > today) return;
-          (sale.items || []).forEach(saleItem => {
-            // Find the item code by matching name
-            const matchedItem = items.find(i => (i.name || i.item_name) === saleItem.name);
-            if (matchedItem) {
-              const code = matchedItem.item_code || matchedItem.model_number || matchedItem.code || '';
-              salesQtyMap[code] = (salesQtyMap[code] || 0) + Number(saleItem.quantity || 0);
-            }
-          });
-        });
+        // Fetch all GRNs for the current branch
+        const grnRes = await api.get('/grn', { params: { branch_id } });
+        const grns = Array.isArray(grnRes.data) ? grnRes.data : grnRes.data?.grns || [];
 
-        // Get all items that exist in GRNs
-        const itemsInGrns = [];
-        const itemCodeMap = {};
+        // Fetch all sales details for the current branch
+        const salesRes = await api.get('/sales-details', { params: { branch_id } });
+        const sales = Array.isArray(salesRes.data) ? salesRes.data : [];
+
+        // Build GRN quantity map: item_code -> sum of quantity up to today
+        const grnQuantityMap = {};
+        const latestPriceMap = {};
+
         grns.forEach(grn => {
-          (grn.items || []).forEach(grnItem => {
-            const code = grnItem.item_code || grnItem.code;
-            if (!itemCodeMap[code]) {
-              const matchingItem = items.find(item =>
-                (item.item_code || item.model_number || item.code) === code
-              );
-              if (matchingItem) {
-                itemCodeMap[code] = true;
-                itemsInGrns.push({
-                  ...matchingItem,
-                  retail_price: grnItem.retail_price || grnItem.price || matchingItem.retail_price || 0,
-                  barcode: code,
-                  sale_discount: grnItem.sale_discount || 0,
-                  // image, name, etc. will be mapped below
-                });
+          if (!grn.invoice_date || grn.invoice_date > today) return;
+          if (grn.items && Array.isArray(grn.items)) {
+            grn.items.forEach(grnItem => {
+              const itemCode = grnItem.item_code || grnItem.code;
+              if (!itemCode) return;
+              const quantity = Number(grnItem.quantity) || 0;
+              grnQuantityMap[itemCode] = (grnQuantityMap[itemCode] || 0) + quantity;
+
+              // Track latest price by invoice_date
+              const retailPrice = Number(grnItem.retail_price) || 0;
+              if (!latestPriceMap[itemCode] || (grn.invoice_date > (latestPriceMap[itemCode].invoice_date || ''))) {
+                latestPriceMap[itemCode] = {
+                  retail_price: retailPrice,
+                  invoice_date: grn.invoice_date
+                };
               }
-            }
-          });
+            });
+          }
         });
 
-        // Map to menuItems format, include discount and correct available calculation
-        const mergedMenuItems = itemsInGrns.map(item => {
-          const code = item.item_code || item.model_number || item.code || '';
-          // Image URL construction
+        // Build sales quantity map: item_code -> sum of sold quantity up to today
+        const salesQuantityMap = {};
+        sales.forEach(sale => {
+          if (!sale.date || sale.date > today) return;
+          if (Array.isArray(sale.items)) {
+            sale.items.forEach(saleItem => {
+              // Try to match by item_code, fallback to name
+              let itemCode = saleItem.item_code;
+              if (!itemCode && saleItem.name) {
+                const found = items.find(i => i.item_name === saleItem.name || i.name === saleItem.name);
+                itemCode = found ? (found.model_number || found.item_code) : '';
+              }
+              if (!itemCode) return;
+              const qty = Number(saleItem.quantity) || 0;
+              salesQuantityMap[itemCode] = (salesQuantityMap[itemCode] || 0) + qty;
+            });
+          }
+        });
+
+        // Map items to menu items format
+        const allMenuItems = items.map(item => {
+          const itemCode = item.model_number || item.item_code;
+          const grnQty = grnQuantityMap[itemCode] || 0;
+          const salesQty = salesQuantityMap[itemCode] || 0;
+          const quantity = grnQty - salesQty;
+          const priceData = latestPriceMap[itemCode] || { retail_price: 0 };
+
+          // Build image URL
           let imageUrl = '';
-          if (item.image_url) imageUrl = item.image_url;
-          else if (item.image) {
+          if (item.image) {
             imageUrl = item.image.startsWith('http')
               ? item.image
-              : `http://localhost:3000/uploads/${item.image}`;
+              : `${api.defaults.baseURL.replace('/api', '')}/uploads/${item.image}`;
           }
-          // Calculate available: GRN qty up to today - sales qty up to today
-          const available = (qtyMap[code] || 0) - (salesQtyMap[code] || 0);
+
           return {
             id: item.id,
-            name: item.name || item.item_name || '',
-            price: Number(item.retail_price || item.retailPrice || item.price || 0),
+            name: item.item_name || item.name || '',
+            price: Number(priceData.retail_price || item.retail_price || item.price || 0),
             image: imageUrl,
-            available: available,
-            barcode: code,
-            discount: (discountMap[code] && discountMap[code].discount) || 0,
+            available: quantity,
+            barcode: item.barcode || '',
+            item_code: itemCode,
+            category: item.category_name || item.category || ''
           };
         });
 
-        setMenuItems(mergedMenuItems);
+        setMenuItems(allMenuItems);
         setMenuItemsError(null);
       } catch (err) {
+        console.error('Error fetching menu items:', err);
         setMenuItems([]);
-        setMenuItemsError('Could not load items');
+        setMenuItemsError('Could not load menu items');
       } finally {
         setLoadingMenuItems(false);
       }
     };
 
     fetchMenuItems();
-  }, []);
+  }, [selectedBranch]);
 
   const handleQuantityChange = (itemId, delta) => {
     setQuantities((prev) => {
@@ -265,16 +248,12 @@ export default function Home() {
 
   // Filter menu items based on search term and selected category
   const filteredMenuItems = menuItems.filter(item => {
-    const matchesCategory =
-      selectedCategory === 'all' ||
-      (selectedCategory === 'phones' && item.category === 'smartphone') ||
-      (selectedCategory === 'laptops' && item.category === 'laptop') ||
-      (selectedCategory === 'accessories' && item.category === 'accessory') ||
-      (selectedCategory === 'monitors' && item.category === 'monitor') ||
-      (selectedCategory === 'batteries' && item.category === 'battery') ||
-      (selectedCategory === 'network' && item.category === 'network');
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || 
+      (item.category && item.category.toLowerCase().includes(selectedCategory.toLowerCase()));
+    const matchesSearch = searchTerm === '' || 
+      (item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.barcode && item.barcode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.item_code && item.item_code.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 
@@ -284,9 +263,9 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen flex p-2 gap-2 overflow-hidden bg-gradient-to-br from-white via-[#f8fbff] to-[#e4f4fa] relative font-inter text-[#03648a]">
-      {/* Main Content Container - Left Side */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden main-content-container border-glow rounded-2xl bg-white/80 backdrop-blur-sm border border-transparent"
+    <div className="h-screen flex p-2 gap-2 overflow-hidden bg-white relative font-inter text-[#03648a]">
+      {/* Main Content Container */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden"
         style={{ maxHeight: 'calc(100vh - 64px)' }}
       >
         {/* Header Section - Fixed */}
@@ -409,7 +388,7 @@ export default function Home() {
                 ) : filteredMenuItems.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="menu-card p-2 rounded-xl border border-[#7ed8fa]/40 bg-white/90 backdrop-blur-sm flex flex-col items-center text-[9px] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] menu-card-anim group modern-card card-glow"
+                    className="menu-card p-2 rounded-xl border border-[#7ed8fa]/40 bg-white/90 backdrop-blur-sm flex flex-col items-center text-[9px] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] menu-card-anim group modern-card"
                     style={{ animationDelay: `${idx * 0.04}s` }}
                   >
                     <div className="flex items-start w-full mb-1">
@@ -474,12 +453,11 @@ export default function Home() {
           )}
         </div>
       </div>
-      {/* Bill Details Container - Right Side - Fixed */}
+      
+      {/* Bill Details Container */}
       {!showSalesDetails && (
-        <div
-          className="flex-shrink-0 w-full max-w-md h-full overflow-hidden billing-container border-glow rounded-2xl border border-transparent bill-glow"
-          style={{ maxHeight: 'calc(100vh - 64px)' }}
-        >
+        <div className="flex-shrink-0 w-full max-w-md h-full overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl border border-[#e5e7eb]"
+          style={{ maxHeight: 'calc(100vh - 64px)' }}>
           <BillDetails
             cart={cart}
             onRemove={handleRemoveFromCart}
@@ -487,7 +465,6 @@ export default function Home() {
             onDecrease={handleDecreaseQty}
             onCheckout={handleCheckout}
           />
-          {/* Add a cancel button for demonstration */}
           <div className="p-2">
             <button
               className="btn-3d bg-gradient-to-r from-[#e57373]/40 to-[#ffbdbd]/30 text-[#a10000] px-2 py-0.5 rounded-lg text-[10px] font-bold border border-[#e57373]/40 hover:from-[#e57373]/60 hover:to-[#ffbdbd]/50 hover:text-[#a10000] active:from-[#e57373]/80 active:to-[#ffbdbd]/60 active:text-[#a10000] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#e57373]/30 scale-100 group-hover:scale-105 add-btn"
@@ -502,7 +479,13 @@ export default function Home() {
       )}
       {/* Enhanced Animations and Styles */}
       <style>{`
-        .font-inter { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
+        .font-inter { 
+          font-family: 'Inter', 'Segoe UI', Arial, sans-serif; 
+        }
+        body, #root {
+          background: #FFFFFF;
+          min-height: 100vh;
+        }
         .search-glow {
           box-shadow: 0 0 0 2px #7ed8fa, 0 0 8px 2px #94aefe;
         }
@@ -510,21 +493,12 @@ export default function Home() {
           box-shadow: 0 0 0 3px #7ed8fa, 0 0 12px 4px #94aefe;
         }
         .card-glow {
-          box-shadow: 0 0 0 2px #7ed8fa, 0 0 12px 2px #94aefe;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
         }
         .card-glow:hover, .card-glow:focus-within {
           box-shadow: 0 0 0 3px #7ed8fa, 0 0 18px 6px #94aefe;
         }
-        .bill-glow {
-          box-shadow: 0 0 0 2px #7ed8fa, 0 0 16px 2px #94aefe;
-        }
-        .bill-glow:focus-within, .bill-glow:hover {
-          box-shadow: 0 0 0 3px #7ed8fa, 0 0 24px 8px #94aefe;
-        }
-        .billing-container {
-          animation: borderGlow 3s ease-in-out infinite;
-          animation-delay: 1.5s;
-        }
+
         .home-title-anim {
           animation: homeTitlePop 0.8s cubic-bezier(.4,0,.2,1);
         }
@@ -664,11 +638,11 @@ export default function Home() {
         
         /* Enhanced glow effects */
         .card-glow {
-          box-shadow: 0 0 0 2px #7ed8fa, 0 0 12px 2px #94aefe, 0 3px 5px rgba(0,0,0,0.1);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .card-glow:hover, .card-glow:focus-within {
-          box-shadow: 0 0 0 3px #7ed8fa, 0 0 18px 6px #94aefe, 0 5px 10px rgba(0,0,0,0.15);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
         
         .bill-glow {

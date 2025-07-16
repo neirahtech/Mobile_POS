@@ -18,9 +18,14 @@ const purchaseOrderRoutes = require('./routes/purchaseOrderRoutes');
 const purchaseReturnRoutes = require('./routes/purchaseReturnRoutes');
 const debtorStatementRoutes = require('./routes/debtorStatementRoutes');
 const storeRoutes = require('./routes/storeRoutes');
-const branchRoutes = require('./routes/branchRoutes'); // <-- add this
+const branchRoutes = require('./routes/branchRoutes');
 const userRoutes = require('./routes/userRoutes');
-const billingSettingsRoutes = require('./routes/billingSettingsRoutes'); // <-- add this
+const billingSettingsRoutes = require('./routes/billingSettingsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const sendNotificationRoutes = require('./routes/sendNotificationRoutes');
+const paymentHistoryRoutes = require('./routes/paymentHistoryRoutes');
+const expenseReportRoutes = require('./routes/expenseReportRoutes');
+const expenseCategoryRoutes = require('./routes/expenseCategoryRoutes');
 
 const app = express();
 
@@ -71,7 +76,12 @@ app.use('/api/grn', grnRoutes); // <-- FIXED: added leading slash
 
 app.use('/api', salesRoutes);
 app.use('/api', userRoutes);
-app.use('/api', billingSettingsRoutes); // <-- add this after other routes
+app.use('/api', billingSettingsRoutes);
+app.use('/api/notification-templates', notificationRoutes);
+app.use('/api/notifications', sendNotificationRoutes);
+app.use('/api/payment-history', paymentHistoryRoutes);
+app.use('/api/expense-reports', expenseReportRoutes);
+app.use('/api/expense-categories', expenseCategoryRoutes);
 
 const itemsRouter = require('./routes/items');
 app.use('/', itemsRouter);
