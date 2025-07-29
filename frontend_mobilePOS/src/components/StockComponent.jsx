@@ -124,173 +124,265 @@ export default function StockComponent() {
   });
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold text-[#03648a] mb-4">
-        Stock Inventory {selectedBranch ? `- ${selectedBranch.name}` : ''}
-      </h2>
+    <div className="space-y-4 p-4">
+      {/* Stock List Header with hole effect */}
+      <div className="relative w-full pl-2 -mt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="
+              w-[140px] h-[36px]
+              flex items-center justify-center
+              rounded-full
+              bg-white
+              shadow-[0_2px_6px_rgba(0,0,0,0.1)]">
+              <div className="
+                w-[130px] h-[30px]
+                flex items-center justify-center
+                rounded-full
+                bg-white
+                border border-[#d0d7f2]
+                text-[#0b27b1] text-[13px] font-semibold -mt-0.5
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+              ">
+                Stock List
+              </div>
+            </div>
+            {selectedBranch && (
+              <span className="ml-3 text-sm text-[#5a6e9a]">
+                {selectedBranch.name}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
       
-      {/* Filter Controls */}
-      <div className="flex flex-wrap gap-3 mb-4 items-end">
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Name</label>
-          <input
-            type="text"
-            placeholder="Item name"
-            value={filters.name}
-            onChange={e => setFilters(f => ({ ...f, name: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
+      {/* Filter Section */}
+      <div className="bg-white rounded-lg p-3 shadow-[0_2px_6px_rgba(0,0,0,0.1)]">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Item Name</label>
+            <input
+              type="text"
+              placeholder="Search by name"
+              value={filters.name}
+              onChange={e => setFilters(f => ({ ...f, name: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Item Code</label>
+            <input
+              type="text"
+              placeholder="Search by code"
+              value={filters.code}
+              onChange={e => setFilters(f => ({ ...f, code: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Category</label>
+            <input
+              type="text"
+              placeholder="Filter by category"
+              value={filters.category}
+              onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+            />
+          </div>
+          
+          <div className="flex items-end space-x-2">
+            <button
+              type="button"
+              onClick={() => setFilters({
+                name: '', code: '', category: '', minQty: '', maxQty: '', minPrice: '', maxPrice: ''
+              })}
+              className="px-4 py-1.5 bg-white text-[#5a6e9a] rounded-lg text-sm font-medium border border-[#e0e4ed]
+                shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:bg-gray-50 transition-all duration-200
+                active:translate-y-px"
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Code</label>
-          <input
-            type="text"
-            placeholder="Item code"
-            value={filters.code}
-            onChange={e => setFilters(f => ({ ...f, code: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Min Qty</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Min"
+                value={filters.minQty}
+                onChange={e => setFilters(f => ({ ...f, minQty: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Max Qty</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Max"
+                value={filters.maxQty}
+                onChange={e => setFilters(f => ({ ...f, maxQty: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Min Price</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Min"
+                value={filters.minPrice}
+                onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Max Price</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Max"
+                value={filters.maxPrice}
+                onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Category</label>
-          <input
-            type="text"
-            placeholder="Category"
-            value={filters.category}
-            onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Min Qty</label>
-          <input
-            type="number"
-            min="0"
-            placeholder="Min"
-            value={filters.minQty}
-            onChange={e => setFilters(f => ({ ...f, minQty: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Max Qty</label>
-          <input
-            type="number"
-            min="0"
-            placeholder="Max"
-            value={filters.maxQty}
-            onChange={e => setFilters(f => ({ ...f, maxQty: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Min Price</label>
-          <input
-            type="number"
-            min="0"
-            placeholder="Min"
-            value={filters.minPrice}
-            onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Max Price</label>
-          <input
-            type="number"
-            min="0"
-            placeholder="Max"
-            value={filters.maxPrice}
-            onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <button
-          type="button"
-          className="ml-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs border border-[#e0eefa] hover:bg-gray-200"
-          onClick={() => setFilters({
-            name: '', code: '', category: '', minQty: '', maxQty: '', minPrice: '', maxPrice: ''
-          })}
-        >
-          Clear
-        </button>
       </div>
 
       {loading ? (
-        <div className="text-gray-500">Loading stock...</div>
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-pulse flex flex-col items-center space-y-2">
+            <div className="w-8 h-8 border-4 border-t-[#0b27b1] border-r-[#0b27b1] border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+            <span className="text-[#5a6e9a] text-sm">Loading stock data...</span>
+          </div>
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8">
-          <table className="min-w-full text-[11px] md:text-xs border-separate border-spacing-y-2">
-            <thead className="bg-[#e4f4fa] text-[#0492C2]">
-              <tr>
-                <th className="px-2 py-2 font-semibold text-center">Image</th>
-                <th className="px-2 py-2 font-semibold text-center">Item Name</th>
-                <th className="px-2 py-2 font-semibold text-center">Category</th>
-                <th className="px-2 py-2 font-semibold text-center">Barcode</th>
-                <th className="px-2 py-2 font-semibold text-center">Available Qty</th>
-                <th className="px-2 py-2 font-semibold text-center">Retail Price</th>
-                <th className="px-2 py-2 font-semibold text-center">Wholesale Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStock.length > 0 ? filteredStock.map(item => (
-                <tr
-                  key={item.id}
-                  className="items-table-row group transition-all duration-200 align-middle text-[#03648a]"
-                  style={{
-                    height: '56px',
-                    borderRadius: '18px',
-                    background: '#fff',
-                  }}
-                >
-                  <td className="text-center align-middle">
-                    <div className="w-10 h-7 mx-auto flex items-center justify-center rounded-md border border-[#e0eefa] bg-[#f8fbff] overflow-hidden">
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.item_name}
-                          className="w-full h-full object-cover"
-                          style={{ minWidth: '40px', minHeight: '28px' }}
-                          onError={e => { 
-                            e.target.onerror = null; 
-                            e.target.src = '/no-image.png'; 
-                          }}
-                        />
-                      ) : (
-                        <span className="text-gray-400 text-xs">No Image</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="text-center align-middle">{item.item_name}</td>
-                  <td className="text-center align-middle">{item.category}</td>
-                  <td className="text-center align-middle">{item.barcode}</td>
-                  <td className="text-center align-middle font-bold">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      item.available_qty === 0 
-                        ? 'bg-red-100 text-red-600' 
-                        : item.available_qty < 10 
-                        ? 'bg-yellow-100 text-yellow-600' 
-                        : 'bg-green-100 text-green-600'
-                    }`}>
-                      {item.available_qty}
-                    </span>
-                  </td>
-                  <td className="text-center align-middle">
-                    LKR {Number(item.retail_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="text-center align-middle">
-                    LKR {Number(item.wholesale_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </td>
-                </tr>
-              )) : (
+        <div className="bg-white rounded-lg shadow-sm border border-[#e0e4ed] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#e0e4ed]">
+              <thead className="bg-[#f8f9fd]">
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-4">
-                    No stock data found.
-                  </td>
+                  <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    SN
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Image
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Item Name
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Barcode
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Qty
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-right text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Retail
+                  </th>
+                  <th scope="col" className="px-2 py-2 text-right text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                    Wholesale
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-[#e0e4ed]">
+                {filteredStock.length > 0 ? filteredStock.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <div className="w-8 h-8 mx-auto bg-white rounded-md border border-[#e0e4ed] overflow-hidden flex items-center justify-center">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.item_name}
+                            className="w-full h-full object-cover"
+                            onError={e => { 
+                              e.target.onerror = null; 
+                              e.target.src = '/no-image.png'; 
+                            }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full bg-gray-50">
+                            <span className="text-[10px] text-gray-400">No Image</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {item.item_name}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <span className="inline-block px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                        {item.category || 'Uncategorized'}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-center text-sm text-gray-700 font-mono">
+                      {item.barcode || '-'}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        item.available_qty === 0 
+                          ? 'bg-red-100 text-red-800' 
+                          : item.available_qty < 10 
+                          ? 'bg-yellow-100 text-yellow-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {item.available_qty}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700 text-right">
+                      {Number(item.retail_price || 0).toFixed(2)}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-sm font-semibold text-gray-700 text-right">
+                      {Number(item.wholesale_price || 0).toFixed(2)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293L8.293 13.293A1 1 0 007.586 13H4"></path>
+                        </svg>
+                        <p className="text-sm font-medium text-gray-500">No stock data found</p>
+                        <p className="text-xs text-gray-400">Try adjusting your filters or add new stock</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

@@ -15,7 +15,7 @@ const authenticate = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
         // Check if user still exists
-        const [user] = await db.query('SELECT * FROM users WHERE id = ?', [decoded.userId]);
+        const [user] = await db.query('SELECT * FROM workers WHERE id = ?', [decoded.userId]);
         
         if (!user || user.length === 0) {
             return res.status(401).json({ message: 'User not found' });

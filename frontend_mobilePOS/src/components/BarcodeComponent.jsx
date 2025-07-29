@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BsPrinter, BsEye, BsBoxSeam } from 'react-icons/bs';
+import { BsPrinter, BsBoxSeam } from 'react-icons/bs';
+import { MdVisibility } from 'react-icons/md';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import JsBarcode from 'jsbarcode';
@@ -277,14 +278,37 @@ const BarcodeComponent = () => {
   }
 
   return (
-    <div className="p-4">
-      <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Barcode Management</h2>
-        <div className="flex gap-4">
+    <div className="space-y-4 p-4">
+      {/* Header with hole effect */}
+      <div className="relative w-full pl-2 -mt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="
+              w-[180px] h-[36px]
+              flex items-center justify-center
+              rounded-full
+              bg-white
+              shadow-[0_2px_6px_rgba(0,0,0,0.1)]">
+              <div className="
+                w-[170px] h-[30px]
+                flex items-center justify-center
+                rounded-full
+                bg-white
+                border border-[#d0d7f2]
+                text-[#0b27b1] text-[13px] font-semibold -mt-0.5
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+              ">
+                Barcode Management
+              </div>
+            </div>
+          </div>
+          
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Print Type:</span>
+            <span className="text-xs font-medium text-[#5a6e9a]">Print Type:</span>
             <select 
-              className="border rounded p-1 text-sm"
+              className="px-3 py-1.5 text-sm text-[#2d3748] border border-[#e0e4ed] rounded-lg 
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
               value={printType}
               onChange={(e) => setPrintType(e.target.value)}
             >
@@ -295,112 +319,173 @@ const BarcodeComponent = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Barcode (8-digit)
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Item Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Stock
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Update
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex flex-col items-start">
-                    <img 
-                      src={generateBarcode(item)} 
-                      alt="Barcode" 
-                      className="h-10 w-auto"
-                    />
-                    <span className="text-xs text-gray-500 mt-1">
-                      {item.barcodeNumber || generateBarcodeNumber(item.id)}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{item.item_name || item.name || 'N/A'}</div>
-                  <div className="text-sm text-gray-500">Code: {item.model_number || 'N/A'}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <BsBoxSeam className="h-4 w-4 text-gray-500 mr-1" />
-                    <span className="text-sm text-gray-700">
-                      {item.stock} in stock
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(item.updated_at || new Date()).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => handlePrint(item)}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                    title="Print Barcode"
-                  >
-                    <BsPrinter className="h-5 w-5 inline" />
-                  </button>
-                  <button
-                    onClick={() => handlePreview(item)}
-                    className="text-green-600 hover:text-green-900"
-                    title="View Barcode"
-                  >
-                    <BsEye className="h-5 w-5 inline" />
-                  </button>
-                </td>
+      {/* Barcodes Table */}
+      <div className="bg-white rounded-lg shadow-sm border border-[#e0e4ed] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-[#e0e4ed]">
+            <thead className="bg-[#f8f9fd]">
+              <tr>
+                <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                  SN
+                </th>
+                <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                  Barcode
+                </th>
+                <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                  Item Name
+                </th>
+                <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                  Stock
+                </th>
+                <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                  Last Update
+                </th>
+                <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-[#e0e4ed]">
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                      </svg>
+                      <p className="text-sm font-medium text-gray-500">No barcode items found</p>
+                      <p className="text-xs text-gray-400">Add items to generate barcodes</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                items.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700 text-center">
+                      {index + 1}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <div className="flex flex-col items-center">
+                        <img 
+                          src={generateBarcode(item)} 
+                          alt="Barcode" 
+                          className="h-8 w-auto"
+                        />
+                        <span className="text-xs text-gray-500 mt-0.5">
+                          {item.barcodeNumber || generateBarcodeNumber(item.id)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {item.item_name || item.name || 'N/A'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {item.model_number ? `Code: ${item.model_number}` : 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center">
+                        <BsBoxSeam className="h-3.5 w-3.5 text-gray-400 mr-1.5" />
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          item.stock === 0 
+                            ? 'bg-red-100 text-red-800' 
+                            : item.stock < 10 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {item.stock} in stock
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-[#4a5568]">
+                      {new Date(item.updated_at || new Date()).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm">
+                      <div className="flex justify-center items-center space-x-1">
+                        <button
+                          onClick={() => handlePreview(item)}
+                          className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-[#5a6e9a] hover:bg-[#f0f4ff] hover:text-[#0b27b1] transition-colors duration-200 shadow-sm"
+                          title="View Barcode"
+                        >
+                          <MdVisibility className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handlePrint(item)}
+                          className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-[#5a6e9a] hover:bg-[#f0f4ff] hover:text-[#0b27b1] transition-colors duration-200 shadow-sm"
+                          title="Print Barcode"
+                        >
+                          <BsPrinter className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Barcode Preview Modal */}
       {showPreview && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">{selectedItem.name} - Barcode</h3>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex flex-col items-center">
-              <img 
-                src={generateBarcode(selectedItem.id)} 
-                alt="Barcode Preview" 
-                className="mb-4 w-full max-w-xs"
-              />
-              <div className="text-center">
-                <p className="font-medium">{selectedItem.name}</p>
-                <p className="text-sm text-gray-600">ID: {selectedItem.id}</p>
-                <p className="text-sm text-gray-600">Price: ${selectedItem.price}</p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="sticky top-0 bg-white border-b border-[#e0e4ed] p-4 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-[#03648a]">
+                  {selectedItem.name || selectedItem.item_name || 'Item'} - Barcode
+                </h3>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="text-gray-500 hover:text-gray-700 p-1"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => handlePrint(selectedItem)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
-              >
-                <BsPrinter className="h-4 w-4" />
-                Print {printType === 'sticker' ? 'Sticker' : 'Tag'}
-              </button>
+            
+            <div className="p-6">
+              <div className="flex flex-col items-center">
+                <img 
+                  src={generateBarcode(selectedItem)} 
+                  alt="Barcode Preview" 
+                  className="mb-6 w-full max-w-xs"
+                />
+                <div className="text-center w-full">
+                  <p className="font-medium text-[#2d3748] text-lg">
+                    {selectedItem.name || selectedItem.item_name || 'N/A'}
+                  </p>
+                  {selectedItem.model_number && (
+                    <p className="text-sm text-[#5a6e9a] mt-1">
+                      Code: {selectedItem.model_number}
+                    </p>
+                  )}
+                  {(selectedItem.retail_price || selectedItem.price) && (
+                    <p className="text-lg font-bold text-[#0b27b1] mt-2">
+                      ${(parseFloat(selectedItem.retail_price || selectedItem.price) || 0).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mt-8 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handlePrint(selectedItem)}
+                  className="px-6 py-2 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white rounded-lg font-semibold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition flex items-center gap-2"
+                >
+                  <BsPrinter className="w-4 h-4" />
+                  Print {printType === 'sticker' ? 'Sticker' : 'Tag'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { BsClipboard2CheckFill, BsBox2Fill, BsQrCode, BsBoxSeamFill, BsUpcScan, BsBoxSeam } from 'react-icons/bs';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { FaRegEdit } from 'react-icons/fa';
-import { MdDeleteOutline, MdVisibility } from 'react-icons/md';
+import { MdDelete, MdEdit, MdDeleteOutline, MdVisibility } from 'react-icons/md';
+import { Menu, Transition } from '@headlessui/react';
 import axios from 'axios';
 import api from '../utils/axios';
 import { XMarkIcon } from '@heroicons/react/24/solid';
@@ -688,59 +689,55 @@ export default function Inventory() {
   });
 
   return (
-    <div className="w-full flex flex-col items-center min-h-[calc(100vh-60px)] bg-gradient-to-br from-[#e4f4fa] to-[#f8fbff] py-8 px-2 gap-8">
-      <div className="w-full max-w-6xl bg-white/90 rounded-2xl shadow-2xl border border-[#b6e0fe] p-6 relative animate-fadein mb-4">
-        {/* Rectangle Heading */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-[#0492C2] tracking-wide flex items-center gap-2">
-            <span>Inventory</span>
-            <span className="block w-12 md:w-16 h-1 rounded bg-gradient-to-r from-[#0492C2] to-[#b6e0fe]"></span>
-          </h1>
-        </div>
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex-1 overflow-y-auto p-3">
+
         <div className="flex flex-wrap gap-2 mb-4">
           <button
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
-              activeTable === 'items'
-                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
-                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
-            }`}
             onClick={() => { setActiveTable('items'); setShowStockForm(false); setShowBarcodeForm(false); }}
+            className={`min-w-max px-4 py-1.5 text-xs font-semibold transition-all duration-200 whitespace-nowrap rounded-full flex items-center gap-1 ${
+              activeTable === 'items'
+                ? 'bg-gradient-to-b from-blue-100 to-blue-50 text-blue-700 shadow-inner border border-blue-200/80'
+                : 'bg-white text-slate-600 hover:bg-blue-50 border border-blue-100 hover:border-blue-200/80 shadow-sm hover:text-blue-600'
+            }`}
           >
-            <BsBoxSeamFill className="w-4 h-4" />
+            <BsBoxSeamFill className="w-3.5 h-3.5" />
             Items
           </button>
+          
           <button
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
-              activeTable === 'grn'
-                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
-                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
-            }`}
             onClick={() => { setActiveTable('grn'); setShowStockForm(false); setShowBarcodeForm(false); }}
+            className={`min-w-max px-4 py-1.5 text-xs font-semibold transition-all duration-200 whitespace-nowrap rounded-full flex items-center gap-1 ${
+              activeTable === 'grn'
+                ? 'bg-gradient-to-b from-blue-100 to-blue-50 text-blue-700 shadow-inner border border-blue-200/80'
+                : 'bg-white text-slate-600 hover:bg-blue-50 border border-blue-100 hover:border-blue-200/80 shadow-sm hover:text-blue-600'
+            }`}
           >
-            <BsClipboard2CheckFill className="w-4 h-4" />
+            <BsClipboard2CheckFill className="w-3.5 h-3.5" />
             GRN
           </button>
-          {/* Add Stock tab button back */}
+          
           <button
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
-              activeTable === 'stock'
-                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
-                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
-            }`}
             onClick={() => { setActiveTable('stock'); setShowStockForm(false); setShowBarcodeForm(false); }}
+            className={`min-w-max px-4 py-1.5 text-xs font-semibold transition-all duration-200 whitespace-nowrap rounded-full flex items-center gap-1 ${
+              activeTable === 'stock'
+                ? 'bg-gradient-to-b from-blue-100 to-blue-50 text-blue-700 shadow-inner border border-blue-200/80'
+                : 'bg-white text-slate-600 hover:bg-blue-50 border border-blue-100 hover:border-blue-200/80 shadow-sm hover:text-blue-600'
+            }`}
           >
-            <BsBox2Fill className="w-4 h-4" />
+            <BsBox2Fill className="w-3.5 h-3.5" />
             Stock
           </button>
+          
           <button
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-semibold text-xs shadow transition-all duration-200 ${
-              activeTable === 'barcodes'
-                ? 'bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white'
-                : 'bg-[#f8fbff] text-[#0492C2] hover:bg-[#e4f4fa]'
-            }`}
             onClick={() => { setActiveTable('barcodes'); setShowStockForm(false); setShowBarcodeForm(false); }}
+            className={`min-w-max px-4 py-1.5 text-xs font-semibold transition-all duration-200 whitespace-nowrap rounded-full flex items-center gap-1 ${
+              activeTable === 'barcodes'
+                ? 'bg-gradient-to-b from-blue-100 to-blue-50 text-blue-700 shadow-inner border border-blue-200/80'
+                : 'bg-white text-slate-600 hover:bg-blue-50 border border-blue-100 hover:border-blue-200/80 shadow-sm hover:text-blue-600'
+            }`}
           >
-            <BsUpcScan className="w-4 h-4" />
+            <BsUpcScan className="w-3.5 h-3.5" />
             Barcodes
           </button>
         </div>
@@ -748,174 +745,246 @@ export default function Inventory() {
         {/* Items Tab */}
         {activeTable === 'items' && (
           <div>
-            <div className="flex justify-end mb-2">
-              <button
-                className={`px-4 py-2 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white rounded-lg font-semibold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition-all duration-200`}
-                onClick={() => setShowItemForm(true)}
-                aria-hidden={showItemForm}
-                tabIndex={showItemForm ? -1 : 0}
-              >
-                + Add Item
-              </button>
-            </div>
-            {/* Filter Controls for Items Table */}
-            <div className="flex flex-wrap gap-3 mb-4 items-end">
-              <div>
-                <label className="block text-xs font-medium text-[#03648a] mb-1">Name</label>
-                <input
-                  type="text"
-                  placeholder="Item name"
-                  value={itemFilters.name}
-                  onChange={e => setItemFilters(f => ({ ...f, name: e.target.value }))}
-                  className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#03648a] mb-1">Code</label>
-                <input
-                  type="text"
-                  placeholder="Item code"
-                  value={itemFilters.code}
-                  onChange={e => setItemFilters(f => ({ ...f, code: e.target.value }))}
-                  className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#03648a] mb-1">Barcode</label>
-                <input
-                  type="text"
-                  placeholder="Barcode"
-                  value={itemFilters.barcode}
-                  onChange={e => setItemFilters(f => ({ ...f, barcode: e.target.value }))}
-                  className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#03648a] mb-1">Category</label>
-                <input
-                  type="text"
-                  placeholder="Category"
-                  value={itemFilters.category}
-                  onChange={e => setItemFilters(f => ({ ...f, category: e.target.value }))}
-                  className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#03648a] mb-1">Variant</label>
-                <input
-                  type="text"
-                  placeholder="Variant"
-                  value={itemFilters.variant}
-                  onChange={e => setItemFilters(f => ({ ...f, variant: e.target.value }))}
-                  className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-                />
-              </div>
-              <button
-                type="button"
-                className="ml-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs border border-[#e0eefa] hover:bg-gray-200"
-                onClick={() => setItemFilters({ name: '', code: '', barcode: '', category: '', variant: '' })}
-              >
-                Clear
-              </button>
-            </div>
-            {!showItemForm ? (
-              <div className="overflow-x-auto rounded-lg border border-[#b6e0fe] bg-white/80 shadow mb-8">
-                <table className="min-w-full text-[11px] md:text-xs border-separate border-spacing-y-2">
-                  <thead className="bg-[#e4f4fa] text-[#0492C2]">
-                    <tr>
-                      <th className="px-2 py-2 font-semibold text-center">SN</th>
-                      <th className="px-2 py-2 font-semibold text-center">Image</th>
-                      <th className="px-2 py-2 font-semibold text-center">Item Code</th>
-                      <th className="px-2 py-2 font-semibold text-center">Barcode</th>
-                      <th className="px-2 py-2 font-semibold text-center">Item Name</th>
-                      <th className="px-2 py-2 font-semibold text-center">Category</th>
-                      <th className="px-2 py-2 font-semibold text-center">Variants</th>
-                      <th className="px-2 py-2 font-semibold text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredItems.map((item, idx) => (
-                      <tr
-                        key={item.id}
-                        className="items-table-row group transition-all duration-200 align-middle"
-                        style={{
-                          // Add spacing between rows
-                          boxShadow: '0 2px 8px 0 rgba(4,146,194,0.06), 0 1.5px 4px 0 rgba(4,146,194,0.06) !important',
-                        }}
+            {/* Filter and Action Bar */}
+            <div className="mb-4">
+              <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                <div className="flex flex-wrap items-end gap-4">
+                  {/* Filters */}
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1 pl-1">Name</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search by name"
+                          value={itemFilters.name}
+                          onChange={e => setItemFilters(f => ({ ...f, name: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg 
+                            shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                            focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1 pl-1">Code</label>
+                      <input
+                        type="text"
+                        placeholder="Item code"
+                        value={itemFilters.code}
+                        onChange={e => setItemFilters(f => ({ ...f, code: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg 
+                          shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                          focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1 pl-1">Barcode</label>
+                      <input
+                        type="text"
+                        placeholder="Scan barcode"
+                        value={itemFilters.barcode}
+                        onChange={e => setItemFilters(f => ({ ...f, barcode: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg 
+                          shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                          focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1 pl-1">Category</label>
+                      <select
+                        value={itemFilters.category}
+                        onChange={e => setItemFilters(f => ({ ...f, category: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg 
+                          shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                          focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 appearance-none transition-all duration-200 cursor-pointer"
                       >
-                        <td className="text-center align-middle font-bold text-[#0492C2]">{idx + 1}</td>
-                        <td className="text-center align-middle">
-                          <img
-                            src={
-                              item.image
-                                ? (item.image.startsWith('http') ? item.image : `http://localhost:3000/uploads/${item.image}`)
-                                : '/no-image.png'
-                            }
-                            alt={item.item_name}
-                            className="w-10 h-7 object-cover rounded-md border border-[#e0eefa] bg-[#f8fbff] mx-auto"
-                            onError={e => { e.target.onerror = null; e.target.src = '/no-image.png'; }}
-                          />
-                        </td>
-                        <td className="text-center align-middle text-[#03648a]">{item.model_number}</td>
-                        <td className="text-center align-middle">
-                          <div className="flex flex-col items-center">
-                            <img 
-                              src={generateItemBarcode(item)} 
-                              alt="Barcode" 
-                              className="h-8 w-auto mb-1"
-                            />
-                            <span className="text-xs text-gray-500">
-                              {String(item.id).padStart(8, '0')}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="text-center align-middle text-[#03648a]">{item.item_name}</td>
-                        <td className="text-center align-middle text-[#03648a]">
-                          {/* Display category_name from backend as Category */}
-                          {item.category_name || '-'}
-                        </td>
-                        <td className="text-center align-middle text-[#03648a]">
-                          {item.variant_type ? (
-                            // Only show the variant types (before the colon in each pair)
-                            item.variant_type.split(';').map((v, i) => {
-                              const type = v.split(':')[0];
-                              return (
-                                <span key={i} className="bg-[#e4f4fa] text-[#03648a] px-2 py-0.5 rounded-full text-xs mr-1">
-                                  {type}
+                        <option value="">All Categories</option>
+                        {/* Add your categories here */}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1 pl-1">Variant</label>
+                      <input
+                        type="text"
+                        placeholder="Variant type"
+                        value={itemFilters.variant}
+                        onChange={e => setItemFilters(f => ({ ...f, variant: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg 
+                          shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                          focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setItemFilters({ name: '', code: '', barcode: '', category: '', variant: '' })}
+                      className="px-4 py-2 flex items-center gap-1 text-xs font-medium text-blue-700 bg-white/80 hover:bg-white transition-all duration-200 rounded-lg border border-blue-200 shadow-sm hover:shadow-md"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Reset
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowItemForm(true)}
+                      className="px-4 py-1.5 rounded-xl bg-gradient-to-br from-[#0492c2] via-[#107cd1] to-[#0b27b1] text-white
+                        shadow-[inset_0_6px_10px_rgba(0,0,0,0.7),0_6px_10px_#0b27b1]
+                        border border-white/20 text-sm font-medium
+                        hover:brightness-110 transition-all duration-300 active:translate-y-px
+                        flex items-center gap-1 whitespace-nowrap"
+                      aria-hidden={showItemForm}
+                      tabIndex={showItemForm ? -1 : 0}
+                    >
+                      <PlusIcon className="w-3.5 h-3.5 text-white" />
+                      Add Item
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {!showItemForm ? (
+              <div className="space-y-2">
+                {/* Items List Header */}
+                <div className="relative w-full pl-2 -mt-2">
+                  <div className="flex items-center justify-start">
+                    <div className="
+                      w-[140px] h-[36px]
+                      flex items-center justify-center
+                      rounded-full
+                      bg-white
+                      shadow-[0_2px_6px_rgba(0,0,0,0.1)]">
+                      <div className="
+                        w-[130px] h-[30px]
+                        flex items-center justify-center
+                        rounded-full
+                        bg-white
+                        border border-[#d0d7f2]
+                        text-[#0b27b1] text-[13px] font-semibold -mt-0.5
+                        shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                      ">
+                        Items List
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-2xl shadow-sm border border-[#e0e4ed] overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-[#e0e4ed]">
+                      <thead className="bg-[#f8f9fd]">
+                        <tr>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">SN</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Image</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Item Code</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Barcode</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Item Name</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Category</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Variants</th>
+                          <th scope="col" className="px-2 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-[#e0e4ed]">
+                        {filteredItems.map((item, idx) => (
+                          <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-900 text-center">{idx + 1}</td>
+                            <td className="px-2 py-2 whitespace-nowrap">
+                              <div className="w-8 h-8 mx-auto bg-white rounded-md border border-[#e0e4ed] overflow-hidden flex items-center justify-center">
+                                <img
+                                  src={
+                                    item.image
+                                      ? (item.image.startsWith('http') ? item.image : `http://localhost:3000/uploads/${item.image}`)
+                                      : '/no-image.png'
+                                  }
+                                  alt={item.item_name}
+                                  className="w-full h-full object-cover"
+                                  onError={e => { e.target.onerror = null; e.target.src = '/no-image.png'; }}
+                                />
+                              </div>
+                            </td>
+                            <td className="px-2 py-2 whitespace-nowrap text-sm text-gray-700 text-center">
+                              {item.model_number || '-'}
+                            </td>
+                            <td className="px-2 py-2 whitespace-nowrap">
+                              <div className="flex flex-col items-center">
+                                <img 
+                                  src={generateItemBarcode(item)} 
+                                  alt="Barcode" 
+                                  className="h-6 w-auto"
+                                />
+                                <span className="text-[10px] text-gray-500 mt-1">
+                                  {String(item.id).padStart(8, '0')}
                                 </span>
-                              );
-                            })
-                          ) : '-'}
-                        </td>
-                        <td className="text-center align-middle">
-                          <div className="flex gap-1 justify-center items-center">
-                            <button
-                              className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-                              title="View"
-                              onClick={() => fetchItemDetails(item.id)}
-                            >
-                              <MdVisibility className="w-4 h-4 drop-shadow" />
-                            </button>
-                            <button
-                              className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#0492C2] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-                              title="Edit"
-                              onClick={() => handleEditItem(item)}
-                            >
-                              <FaRegEdit className="w-4 h-4 drop-shadow" />
-                            </button>
-                            <button
-                              className="action-btn-3d bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-400 text-red-400 hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-                              title="Delete"
-                              onClick={() => handleDeleteItem(item.id)}
-                            >
-                              <MdDeleteOutline className="w-4 h-4 drop-shadow" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                              </div>
+                            </td>
+                            <td className="px-2 py-2 whitespace-nowrap text-center">
+                              <div className="text-sm font-medium text-gray-900">{item.item_name}</div>
+                            </td>
+                            <td className="px-2 py-2 whitespace-nowrap text-center">
+                              <span className="inline-block px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                {item.category_name || 'Uncategorized'}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2 text-center">
+                              <div className="flex flex-wrap gap-1 justify-center">
+                                {item.variant_type ? (
+                                  item.variant_type.split(';').map((v, i) => {
+                                    const type = v.split(':')[0];
+                                    return (
+                                      <span key={i} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {type}
+                                      </span>
+                                    );
+                                  })
+                                ) : (
+                                  <span className="text-gray-500 text-xs">Simple</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-2 py-2 whitespace-nowrap text-center">
+                              <div className="flex justify-center items-center space-x-1">
+                                {/* View Button */}
+                                <button
+                                  onClick={() => fetchItemDetails(item.id)}
+                                  className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-[#5a6e9a] hover:bg-[#f0f4ff] hover:text-[#0b27b1] transition-colors duration-200 shadow-sm"
+                                  title="View Details"
+                                >
+                                  <MdVisibility className="w-4 h-4" />
+                                </button>
+
+                                {/* Edit Button */}
+                                <button
+                                  onClick={() => handleEditItem(item.id)}
+                                  className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-[#5a6e9a] hover:bg-[#f0f4ff] hover:text-[#0b27b1] transition-colors duration-200 shadow-sm"
+                                  title="Edit Item"
+                                >
+                                  <MdEdit className="w-4 h-4" />
+                                </button>
+
+                                {/* Delete Button */}
+                                <button
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 shadow-sm"
+                                  title="Delete Item"
+                                >
+                                  <MdDeleteOutline className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleStockSubmit} className="space-y-6 relative z-10">
@@ -1169,19 +1238,48 @@ export default function Inventory() {
                                 </button>
                               </label>
                               <div className="relative">
-                                <div className="w-full">
-                                  <div className="relative">
-                                    <button
-                                      type="button"
-                                      className={`w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg text-left focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe] bg-white`}
-                                      onClick={() => setStockForm(prev => ({
-                                        ...prev,
-                                        [`showTypeDropdown${index}`]: !prev[`showTypeDropdown${index}`]
-                                      }))}
-                                    >
-                                      {variant.type || 'Choose a variant type'}
-                                    </button>
-                                    {stockForm[`showTypeDropdown${index}`] && (
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    className="w-full px-4 py-2.5 border border-[#e0eefa] rounded-lg text-left focus:ring-2 focus:ring-[#0492C2] focus:border-transparent transition hover:border-[#b6e0fe] bg-white"
+                                    onClick={() => setStockForm(prev => ({
+                                      ...prev,
+                                      [`showTypeDropdown${index}`]: !prev[`showTypeDropdown${index}`]
+                                    }))}
+                                  >
+                                    {variant.type || 'Choose a variant type'}
+                                  </button>
+                                  {stockForm[`showTypeDropdown${index}`] && (
+                                    <div className="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-lg py-1 border border-[#e0eefa] max-h-48 overflow-auto">
+                                      {variantTypes.map(type => (
+                                        <div
+                                          key={type}
+                                          className="flex justify-between items-center px-4 py-2 hover:bg-[#f0f9ff] cursor-pointer"
+                                          onClick={() => {
+                                            updateVariantType(index, type);
+                                            setStockForm(prev => ({
+                                              ...prev,
+                                              [`showTypeDropdown${index}`]: false
+                                            }));
+                                          }}
+                                        >
+                                          <span>{type}</span>
+                                          <button
+                                            type="button"
+                                            className="text-red-500 hover:text-red-700 ml-2"
+                                            onClick={async e => {
+                                              e.stopPropagation();
+                                              await handleDeleteVariantType(type);
+                                            }}
+                                            tabIndex={-1}
+                                          >
+                                            <MdDeleteOutline className="h-4 w-4" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                      
                                       <div className="absolute z-20 mt-1 w-full bg-white shadow-lg rounded-lg py-1 border border-[#e0eefa] max-h-48 overflow-auto">
                                         {variantTypes.map(type => (
                                           <div
@@ -1210,17 +1308,9 @@ export default function Inventory() {
                                           </div>
                                         ))}
                                       </div>
-                                    )}
+                                    )
                                   </div>
-                                </div>
-                                {loadingVariants && (
-                                  <div className="absolute right-3 top-3">
-                                    <svg className="animate-spin h-5 w-5 text-[#0492C2]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                  </div>
-                                )}
+                                )
                               </div>
                               {errorVariants && (
                                 <p className="text-red-500 text-sm mt-1">{errorVariants}</p>

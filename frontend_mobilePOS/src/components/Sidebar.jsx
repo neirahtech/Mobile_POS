@@ -3,10 +3,8 @@ import {
   BsPeopleFill, BsBuilding, BsFillPieChartFill, BsArrowRightSquareFill,
   BsClipboard2CheckFill, BsBox2Fill, BsTagFill
 } from 'react-icons/bs';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
-import { usePOS } from '../context/POSContext';
+import { useRef, useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 
@@ -17,227 +15,152 @@ const navigation = [
   { name: 'Discounts', icon: BsTagFill, path: '/discounts' },
   { name: 'Customers', icon: BsPeopleFill, path: '/customers' },
   { name: 'Suppliers', icon: BsBuilding, path: '/suppliers' },
-
   { name: 'Reports', icon: BsFillPieChartFill, path: '/reports' },
   { name: 'Settings', icon: BsGearFill, path: '/settings' },
 ];
 
+// ... (previous imports remain the same)
+
 export default function Sidebar() {
   const location = useLocation();
-  const { isSidebarCollapsed, setIsSidebarCollapsed } = usePOS();
-  const { storeInfo } = useStore();
   const [openDropdown, setOpenDropdown] = useState(null);
   const sidebarRef = useRef(null);
 
-  const handleDropdown = (name) => {
-    setOpenDropdown(openDropdown === name ? null : name);
-  };
-
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        setOpenDropdown(null);
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes silver-blink {
+        0% { opacity: 0.9; background-position: 0% 0%; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7)) brightness(1); }
+        25% { opacity: 1; background-position: 50% 50%; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)) brightness(1.1); }
+        50% { opacity: 0.95; background-position: 100% 100%; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8)) brightness(1.05); }
+        75% { opacity: 1; background-position: 50% 50%; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)) brightness(1.1); }
+        100% { opacity: 0.9; background-position: 0% 0%; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7)) brightness(1); }
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+
+      .glass-silver-border {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(14px) saturate(180%);
+        -webkit-backdrop-filter: blur(14px) saturate(180%);
+        border-radius: 0.75rem;
+        position: relative;
+        border: none;
+        overflow: hidden;
+        box-shadow: 
+          inset 1px 1px 2px rgba(255, 255, 255, 0.2),
+          inset -1px -1px 2px rgba(0, 0, 0, 0.1),
+          0 4px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0.25rem; /* Reduced inner padding */
+      }
+      
+      .glass-silver-border:hover {
+        transform: translate3d(0, -2px, 10px) scale(1.02);
+        box-shadow: 
+          inset 2px 2px 4px rgba(255, 255, 255, 0.25),
+          inset -2px -2px 4px rgba(0, 0, 0, 0.15),
+          0 8px 16px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+      
+      .glass-silver-border::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 0.7rem;
+        padding: 5px; /* Increased border width */
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(230, 230, 230, 0.95) 15%,
+          rgba(192, 192, 192, 0.95) 30%,
+          rgba(150, 150, 150, 0.95) 50%,
+          rgba(192, 192, 192, 0.95) 70%,
+          rgba(230, 230, 230, 0.95) 85%,
+          rgba(255, 255, 255, 0.9) 100%
+        );
+        -webkit-mask: 
+          linear-gradient(#fff 0 0) content-box, 
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        animation: silver-blink 4s ease-in-out infinite;
+      }
+      
+      .active-nav-item {
+        background: linear-gradient(135deg, #7ed8fa 0%, #94aefe 100%);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      
+      .active-nav-item .text-gray-700 {
+        color: white;
+      }
+      
+      .active-nav-item .text-gray-500 {
+        color: white;
+      }
+
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
   }, []);
 
   return (
     <div 
       ref={sidebarRef}
-      className={`${
-        isSidebarCollapsed ? 'w-16' : 'w-52'
-      } h-screen flex flex-col transition-all duration-300 ease-in-out relative cursor-pointer sidebar-modern border-r border-[#7ed8fa]/40 shadow-xl sidebar-glow`}
-      style={{
-        background: 'linear-gradient(135deg, #f8fbff 0%, #e4f4fa 100%)',
-        boxShadow: '0 8px 32px #7ed8fa33, 0 4px 16px #94aefe22, 0 0 0 2px #7ed8fa44'
-      }}
+      className="w-20 h-full flex flex-col bg-white/80 backdrop-blur-lg border-r border-gray-200/50 shadow-sm py-3 px-1.5 overflow-hidden"
     >
-      {/* Header */}
-      <div className="p-3 border-b border-[#7ed8fa]/40 header-section flex items-center justify-between">
-        <div className="flex items-center gap-2 w-full">
-          {storeInfo?.logo ? (
-            <div className="flex items-center justify-center w-full">
-              <div className="relative">
-                <img 
-                  src={storeInfo?.logo 
-                    ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/uploads/${storeInfo.logo.replace(/^\/+|\/+$/g, '')}`
-                    : ''} 
-                  alt={storeInfo.name || 'Store Logo'} 
-                  className={`${isSidebarCollapsed ? 'h-8 w-8' : 'h-10 w-10'} rounded-full object-cover bg-white p-1`}
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                  onError={(e) => {
-                    console.error('Error loading logo:', e.target.src);
-                    e.target.style.display = 'none';
-                    const fallback = e.target.parentElement.querySelector('.logo-fallback');
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div 
-                  className="logo-fallback hidden items-center justify-center absolute inset-0 bg-gray-200 rounded-full"
-                  style={{ display: 'none' }}
-                >
-                  {storeInfo.name ? storeInfo.name.charAt(0).toUpperCase() : 'S'}
-                </div>
-              </div>
-              {!isSidebarCollapsed && (
-                <span className="ml-2 text-xl font-bold sidebar-logo-text tracking-wide truncate max-w-[120px]">
-                  {storeInfo.name || 'Store'}
-                </span>
-              )}
-            </div>
-          ) : (
-            <span
-              className={`text-xl font-bold sidebar-logo-text tracking-wide ${isSidebarCollapsed ? 'text-center w-full' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      {/* Navigation Items */}
+      <div className="flex-1 flex flex-col space-y-2 overflow-y-auto no-scrollbar">
+        {navigation.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`relative group flex flex-col items-center justify-center p-1 aspect-square w-full rounded-xl transition-all duration-300 overflow-hidden ${
+                isActive 
+                  ? 'bg-gradient-to-b from-[#0492c2] to-[#0b27b1] text-white shadow-[inset_0_6px_10px_rgba(0,0,0,0.7),0_0_12px_rgba(255,255,255,0.3)]'
+                  : 'bg-white/80 text-gray-700 hover:text-[#0b27b1] shadow-[inset_0_0_6px_rgba(0,0,0,0.15),inset_0_0_4px_rgba(255,255,255,0.6)] hover:shadow-[inset_0_0_8px_rgba(0,0,0,0.2),inset_0_0_6px_rgba(255,255,255,0.7)]'
+              }`}
+              title={item.name}
             >
-              {isSidebarCollapsed ? 'POS' : (storeInfo?.name || 'POS')}
-            </span>
-          )}
-        </div>
-        {/* Removed collapse/expand icon */}
+              <item.icon
+                className={`w-6 h-6 mb-1 ${
+                  isActive ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'
+                }`}
+                aria-hidden="true"
+              />
+              <span className="text-[10px] font-bold text-center leading-tight tracking-tight">
+                {item.name}
+              </span>
+            </Link>
+          );
+        })}
       </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-1 mt-2">
-        <div className="space-y-2">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={(e) => e.stopPropagation()}
-                className={`nav-link group flex items-center gap-3 rounded-xl px-3 py-2 font-medium transition-all duration-300 sidebar-link-glow ${
-                  isActive
-                    ? 'bg-gradient-to-r from-[#7ed8fa]/40 to-[#94aefe]/30 text-[#0492C2] shadow-lg border border-[#7ed8fa]/60 active-nav'
-                    : 'hover:bg-[#7ed8fa]/10 text-[#0492C2]/80 hover:text-[#0492C2] hover:shadow-md hover:border hover:border-[#7ed8fa]/40'
-                } ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                title={isSidebarCollapsed ? item.name : ''}
-                style={{
-                  boxShadow: isActive ? '0 4px 16px #7ed8fa33' : undefined
-                }}
-              >
-                <item.icon className={`transition-all duration-300 group-hover:scale-110 drop-shadow-lg ${
-                  isActive ? 'text-[#0492C2]' : 'text-[#0492C2]/70 group-hover:text-[#0492C2]'
-                } w-6 h-6`} />
-                {!isSidebarCollapsed && <span className="ml-1 text-sm font-semibold">{item.name}</span>}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-
+      
       {/* Footer */}
-      <div className="mt-auto p-2 border-t-0">
-        <div className="mb-8">
-          <div className="flex justify-center">
-            <div
-              className="w-12 h-1 rounded-full decoration-line"
-              style={{
-                background: 'linear-gradient(to right, #7ed8fa66, #94aefe 60%, #7ed8fa66)',
-                opacity: 1,
-                filter: 'blur(1px)'
-              }}
-            />
-          </div>
-        </div>
+      <div className="mt-auto pt-2 border-t border-gray-200/50">
         <button 
           onClick={(e) => {
             e.stopPropagation();
             /* Add logout logic here */
           }}
-          className={`w-full flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-lg border border-[#7ed8fa]/40 text-[#0492C2] hover:bg-gradient-to-r hover:from-[#e4f4fa] hover:to-[#b6e0fe] hover:text-[#03648a] rounded-xl transition-all duration-300 group shadow-lg neumorph-logout hover:shadow-xl ${
-            isSidebarCollapsed ? 'justify-center' : ''
-          }`}
-          title={isSidebarCollapsed ? 'Logout' : ''}
-          style={{
-            boxShadow: '0 4px 12px #7ed8fa22'
-          }}
+          className="w-full flex flex-col items-center justify-center p-1.5 aspect-square rounded-xl transition-all duration-300 overflow-hidden bg-white/80 text-gray-700 hover:text-[#0b27b1] shadow-[inset_0_0_6px_rgba(0,0,0,0.15),inset_0_0_4px_rgba(255,255,255,0.6)] hover:shadow-[inset_0_0_8px_rgba(0,0,0,0.2),inset_0_0_6px_rgba(255,255,255,0.7)]"
+          title="Logout"
         >
-          <div className="relative">
-            <BsArrowRightSquareFill className="w-5 h-5 transition-all duration-300 group-hover:translate-x-1 text-[#0492C2] group-hover:text-[#03648a] drop-shadow-lg" />
-            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-[#0492C2] rounded-full border-1.5 border-white pulse-dot"></div>
-          </div>
-          {!isSidebarCollapsed && <span className="font-semibold tracking-wide text-xs">Logout</span>}
+          <BsArrowRightSquareFill className="w-6 h-6 mb-1 text-gray-500 group-hover:text-[#0b27b1]" />
+          <span className="text-[10px] font-bold leading-tight tracking-tight">Logout</span>
         </button>
       </div>
-
-      {/* Enhanced Styles */}
-      <style>{`
-        .sidebar-modern {
-          background: linear-gradient(135deg, #f8fbff 0%, #e4f4fa 100%);
-          backdrop-filter: blur(10px);
-        }
-        .sidebar-glow {
-          box-shadow: 0 0 0 2px #7ed8fa, 0 0 16px 2px #94aefe;
-        }
-        .sidebar-logo-text {
-          background: linear-gradient(135deg, #7ed8fa 0%, #94aefe 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: logoGlow 2s ease-in-out infinite alternate;
-          letter-spacing: 2px;
-        }
-        @keyframes logoGlow {
-          from { filter: drop-shadow(0 0 2px #7ed8fa88); }
-          to { filter: drop-shadow(0 0 8px #94aefe); }
-        }
-        .sidebar-link-glow {
-          box-shadow: 0 0 0 1px #7ed8fa22;
-        }
-        .sidebar-link-glow:hover, .sidebar-link-glow:focus-within {
-          box-shadow: 0 0 0 2px #7ed8fa, 0 0 8px 2px #94aefe;
-        }
-        .active-nav {
-          position: relative;
-          overflow: hidden;
-        }
-        .active-nav::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, #7ed8fa44, transparent);
-          animation: shimmer 2s infinite;
-        }
-        @keyframes shimmer {
-          0% { left: -100%; }
-          100% { left: 100%; }
-        }
-        .decoration-line {
-          animation: lineGlow 3s ease-in-out infinite;
-        }
-        @keyframes lineGlow {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
-        }
-        .pulse-dot {
-          animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.8; }
-        }
-        .neumorph-logout {
-          box-shadow:
-            0 4px 12px #7ed8fa22,
-            0 2px 4px #94aefe11;
-        }
-        .nav-link:hover {
-          transform: translateY(-1px);
-        }
-        .nav-link:active {
-          transform: translateY(0);
-        }
-      `}</style>
     </div>
   );
 }

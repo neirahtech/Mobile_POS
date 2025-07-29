@@ -9,11 +9,13 @@ export default function UserManagement() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [branches, setBranches] = useState([]);
-  
+  const [isEditing, setIsEditing] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
-    username: '',
     email: '',
+    password: '',
+    contact: '',
     role: 'staff',
     branchCode: ''
   });
@@ -27,7 +29,7 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/users');
+      const response = await api.get('/workers');
       setUsers(response.data);
       setError('');
     } catch (err) {
@@ -59,31 +61,40 @@ export default function UserManagement() {
     e.preventDefault();
     setError('');
     
+    // Don't require password when editing (only if changing it)
+    if (!isEditing && !formData.password) {
+      setError('Password is required');
+      return;
+    }
+    
     try {
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        contact: formData.contact,
+        role: formData.role,
+        branchCode: formData.branchCode
+      };
+      
+      // Only include password if it's provided (for new users or password change)
+      if (formData.password) {
+        userData.password = formData.password;
+      }
+      
       if (editingUser) {
-        await api.put(`/users/${editingUser.id}`, {
-          name: formData.name,
-          username: formData.username,
-          email: formData.email,
-          role: formData.role,
-          branchCode: formData.branchCode
-        });
+        await api.put(`/workers/${editingUser.id}`, userData);
       } else {
-        await api.post('/users', {
-          name: formData.name,
-          username: formData.username,
-          email: formData.email,
-          role: formData.role,
-          branchCode: formData.branchCode
-        });
+        await api.post('/workers', userData);
       }
       
       setShowAddForm(false);
       setEditingUser(null);
+      setIsEditing(false);
       setFormData({
         name: '',
-        username: '',
         email: '',
+        password: '',
+        contact: '',
         role: 'staff',
         branchCode: ''
       });
@@ -97,12 +108,14 @@ export default function UserManagement() {
 
   const handleEdit = (user) => {
     setEditingUser(user);
+    setIsEditing(true);
     setFormData({
       name: user.name,
-      username: user.username,
       email: user.email,
+      contact: user.contact || '',
       role: user.role,
-      branchCode: user.branchCode
+      branchCode: user.branchCode,
+      password: '' // Don't pre-fill password
     });
     setShowAddForm(true);
   };
@@ -110,7 +123,7 @@ export default function UserManagement() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await api.delete(`/users/${id}`);
+        await api.delete(`/workers/${id}`);
         fetchUsers();
       } catch (err) {
         console.error('Error deleting user:', err);
@@ -122,10 +135,12 @@ export default function UserManagement() {
   const handleCancel = () => {
     setShowAddForm(false);
     setEditingUser(null);
+    setIsEditing(false);
     setFormData({
       name: '',
-      username: '',
       email: '',
+      password: '',
+      contact: '',
       role: 'staff',
       branchCode: ''
     });
@@ -181,21 +196,7 @@ export default function UserManagement() {
                 />
               </div>
 
-              <div className="sm:col-span-3">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                  Username *
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  id="username"
-                  required
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  // Username is now always editable
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
+
 
               <div className="sm:col-span-3">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -211,6 +212,53 @@ export default function UserManagement() {
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="contact" className="block text-sm font-medium text-gray-700">
+                  Contact Number
+                </label>
+                <input
+                  type="tel"
+                  name="contact"
+                  id="contact"
+                  value={formData.contact}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              {!isEditing && (
+                <div className="sm:col-span-3">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    required={!isEditing}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+              )}
+
+              {isEditing && (
+                <div className="sm:col-span-3">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    New Password (leave blank to keep current)
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    id="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+              )}
 
               <div className="sm:col-span-3">
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700">
@@ -289,11 +337,12 @@ export default function UserManagement() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Username
-                  </th>
+
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
@@ -313,10 +362,10 @@ export default function UserManagement() {
                       {user.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.username}
+                      {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.email}
+                      {user.contact || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

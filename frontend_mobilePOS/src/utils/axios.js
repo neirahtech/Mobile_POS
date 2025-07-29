@@ -18,9 +18,9 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Robustly skip branch_id for /branches, /store, /users endpoints (with or without /api prefix)
+    // Robustly skip branch_id for /branches, /store, /workers endpoints (with or without /api prefix)
     const url = config.url || '';
-    const skipBranch = /\/(branches|store|users)(\/|$)/.test(url);
+    const skipBranch = /\/(branches|store|workers)(\/|$)/.test(url);
 
     const branch_id = localStorage.getItem('branch_id');
     if (branch_id && !skipBranch) {

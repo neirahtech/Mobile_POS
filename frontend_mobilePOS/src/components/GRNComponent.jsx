@@ -436,35 +436,39 @@ export default function GRNComponent({
         </div>
 
         {viewGRN.items && viewGRN.items.length > 0 && (
-          <div>
+          <div className="mb-6">
             <h3 className="text-lg font-semibold text-[#03648a] mb-3">Items ({viewGRN.items.length})</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-xs border border-[#e0eefa] rounded-lg">
-                <thead className="bg-[#e4f4fa]">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-semibold text-[#0492C2]">Code</th>
-                    <th className="px-3 py-2 text-left font-semibold text-[#0492C2]">Name</th>
-                    <th className="px-3 py-2 text-right font-semibold text-[#0492C2]">Qty</th>
-                    <th className="px-3 py-2 text-right font-semibold text-[#0492C2]">Cost</th>
-                    <th className="px-3 py-2 text-right font-semibold text-[#0492C2]">Wholesale</th>
-                    <th className="px-3 py-2 text-right font-semibold text-[#0492C2]">Retail</th>
-                    <th className="px-3 py-2 text-right font-semibold text-[#0492C2]">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {viewGRN.items.map((item, index) => (
-                    <tr key={index} className="border-b border-[#e0eefa]">
-                      <td className="px-3 py-2">{item.item_code}</td>
-                      <td className="px-3 py-2">{item.item_name}</td>
-                      <td className="px-3 py-2 text-right">{item.quantity}</td>
-                      <td className="px-3 py-2 text-right">{Number(item.cost_price).toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right">{Number(item.wholesale_price).toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right">{Number(item.retail_price).toFixed(2)}</td>
-                      <td className="px-3 py-2 text-right font-semibold">{Number(item.item_invoice_total || (item.cost_price * item.quantity)).toFixed(2)}</td>
+            <div className="bg-white rounded-lg shadow-sm border border-[#e0e4ed] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-[#e0e4ed]">
+                  <thead className="bg-[#f8f9fd]">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Code</th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Qty</th>
+                      <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Cost</th>
+                      <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Wholesale</th>
+                      <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Retail</th>
+                      <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-[#e0e4ed]">
+                    {viewGRN.items.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center">{item.item_code}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{item.item_name}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-center">{item.quantity}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-right">{Number(item.cost_price).toFixed(2)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-right">{Number(item.wholesale_price).toFixed(2)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 text-right">{Number(item.retail_price).toFixed(2)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-semibold text-gray-700 text-right">
+                          {Number(item.item_invoice_total || (item.cost_price * item.quantity)).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -774,7 +778,7 @@ export default function GRNComponent({
               </div>
             )}
           </div>
-          
+
           {/* Form Actions */}
           <div className="sticky bottom-0 bg-white border-t border-[#e0eefa] p-6 rounded-b-xl">
             <div className="flex justify-end gap-3">
@@ -800,157 +804,219 @@ export default function GRNComponent({
 
   // Main GRN List View
   return (
-    <div>
-      {/* Filter Controls */}
-      <div className="flex flex-wrap gap-3 mb-4 items-end">
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Supplier</label>
-          <input
-            type="text"
-            placeholder="Supplier name"
-            value={filters.supplier}
-            onChange={e => setFilters(f => ({ ...f, supplier: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
+    <div className="space-y-4">
+      {/* GRN List Header with hole effect */}
+      <div className="relative w-full pl-2 -mt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="
+              w-[140px] h-[36px]
+              flex items-center justify-center
+              rounded-full
+              bg-white
+              shadow-[0_2px_6px_rgba(0,0,0,0.1)]">
+              <div className="
+                w-[130px] h-[30px]
+                flex items-center justify-center
+                rounded-full
+                bg-white
+                border border-[#d0d7f2]
+                text-[#0b27b1] text-[13px] font-semibold -mt-0.5
+                shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+              ">
+                GRN List
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowGRNForm(true)}
+            className="px-4 py-1.5 rounded-xl bg-gradient-to-br from-[#0492c2] via-[#107cd1] to-[#0b27b1] text-white
+              shadow-[inset_0_6px_10px_rgba(0,0,0,0.7),0_6px_10px_#0b27b1]
+              border border-white/20 text-sm font-medium
+              hover:brightness-110 transition-all duration-300 active:translate-y-px
+              flex items-center gap-1 whitespace-nowrap"
+          >
+            <PlusIcon className="w-3.5 h-3.5 text-white" />
+            Add GRN
+          </button>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Invoice #</label>
-          <input
-            type="text"
-            placeholder="Invoice number"
-            value={filters.invoice}
-            onChange={e => setFilters(f => ({ ...f, invoice: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Date</label>
-          <input
-            type="date"
-            value={filters.date}
-            onChange={e => setFilters(f => ({ ...f, date: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Min Total</label>
-          <input
-            type="number"
-            min="0"
-            placeholder="Min"
-            value={filters.minTotal}
-            onChange={e => setFilters(f => ({ ...f, minTotal: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#03648a] mb-1">Max Total</label>
-          <input
-            type="number"
-            min="0"
-            placeholder="Max"
-            value={filters.maxTotal}
-            onChange={e => setFilters(f => ({ ...f, maxTotal: e.target.value }))}
-            className="px-2 py-1 border border-[#e0eefa] rounded-lg text-xs"
-          />
-        </div>
-        <button
-          type="button"
-          className="ml-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs border border-[#e0eefa] hover:bg-gray-200"
-          onClick={() => setFilters({ supplier: '', invoice: '', date: '', minTotal: '', maxTotal: '' })}
-        >
-          Clear
-        </button>
       </div>
-
-      {/* Add GRN Button */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setShowGRNForm(true)}
-          className="px-4 py-2 bg-gradient-to-r from-[#0492C2] to-[#b6e0fe] text-white rounded-lg font-semibold shadow hover:from-[#037ba1] hover:to-[#b6e0fe] transition flex items-center gap-2"
-        >
-          <PlusIcon className="w-4 h-4" />
-          Add GRN
-        </button>
+      {/* Filter Section */}
+      <div className="bg-white rounded-lg p-3 shadow-[0_2px_6px_rgba(0,0,0,0.1)] mb-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Supplier</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Supplier name"
+                value={filters.supplier}
+                onChange={e => setFilters(f => ({ ...f, supplier: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Invoice #</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Invoice number"
+                value={filters.invoice}
+                onChange={e => setFilters(f => ({ ...f, invoice: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Date</label>
+            <div className="relative">
+              <input
+                type="date"
+                value={filters.date}
+                onChange={e => setFilters(f => ({ ...f, date: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-[100px]">
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Min Total</label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                placeholder="Min"
+                value={filters.minTotal}
+                onChange={e => setFilters(f => ({ ...f, minTotal: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-[100px]">
+            <label className="block text-xs font-medium text-[#5a6e9a] mb-1">Max Total</label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                placeholder="Max"
+                value={filters.maxTotal}
+                onChange={e => setFilters(f => ({ ...f, maxTotal: e.target.value }))}
+                className="w-full px-3 py-1.5 text-sm border border-[#e0e4ed] rounded-lg 
+                  shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1),inset_-1px_-1px_2px_rgba(255,255,255,0.8)]
+                  focus:outline-none focus:ring-2 focus:ring-[#0b27b1]/50"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => setFilters({ supplier: '', invoice: '', date: '', minTotal: '', maxTotal: '' })}
+              className="px-4 py-1.5 bg-white text-[#5a6e9a] rounded-lg text-sm font-medium border border-[#e0e4ed]
+                shadow-[0_2px_4px_rgba(0,0,0,0.05)] hover:bg-gray-50 transition-all duration-200
+                active:translate-y-px"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* GRN Table */}
-      <div className="overflow-x-auto rounded-lg border border-[#b6e0fe] bg-white/80 shadow">
-        <table className="min-w-full text-xs border-separate border-spacing-y-2">
-          <thead className="bg-[#e4f4fa] text-[#0492C2]">
-            <tr>
-              <th className="px-3 py-2 font-semibold text-center">SN</th>
-              <th className="px-3 py-2 font-semibold text-center">GRN ID</th>
-              <th className="px-3 py-2 font-semibold text-center">Supplier</th>
-              <th className="px-3 py-2 font-semibold text-center">Invoice No</th>
-              <th className="px-3 py-2 font-semibold text-center">Invoice Date</th>
-              <th className="px-3 py-2 font-semibold text-center">Items</th>
-              <th className="px-3 py-2 font-semibold text-center">Total Amount</th>
-              <th className="px-3 py-2 font-semibold text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredGRNs.length === 0 ? (
+      <div className="bg-white rounded-lg overflow-hidden shadow-[0_2px_6px_rgba(0,0,0,0.1)]">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-[#e0e4ed]">
+            <thead className="bg-[#f8f9fd]">
               <tr>
-                <td colSpan={8} className="text-center py-8 text-gray-500">
-                  {currentBranch ? 'No GRNs found for this branch.' : 'Please select a branch to view GRNs.'}
-                </td>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">SN</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">GRN ID</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Supplier</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Invoice No</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Date</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Items</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Total</th>
+                <th className="px-3 py-2.5 text-center text-xs font-medium text-[#5a6e9a] uppercase tracking-wider">Actions</th>
               </tr>
-            ) : (
-              filteredGRNs.map((grn, idx) => (
-                <tr 
-                  key={grn.grn_id} 
-                  className="items-table-row group transition-all duration-200 align-middle hover:bg-[#f8fbff]"
-                  style={{
-                    borderRadius: '18px',
-                    background: '#fff',
-                  }}
-                >
-                  <td className="text-center align-middle font-bold text-[#03648a]">{idx + 1}</td>
-                  <td className="text-center align-middle text-[#03648a] font-semibold">{grn.grn_id}</td>
-                  <td className="text-center align-middle text-[#03648a]">{grn.supplier_name}</td>
-                  <td className="text-center align-middle text-[#03648a]">{grn.invoice_number}</td>
-                  <td className="text-center align-middle text-[#03648a]">
-                    {new Date(grn.invoice_date).toLocaleDateString()}
-                  </td>
-                  <td className="text-center align-middle text-[#03648a]">
-                    <span className="bg-[#e4f4fa] text-[#03648a] px-2 py-1 rounded-full text-xs">
-                      {grn.items ? grn.items.length : 0}
-                    </span>
-                  </td>
-                  <td className="text-center align-middle text-[#03648a] font-semibold">
-                    LKR {Number(grn.invoice_total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </td>
-                  <td className="text-center align-middle">
-                    <div className="flex gap-1 justify-center items-center">
-                      <button
-                        onClick={() => handleViewGRN(grn.grn_id)}
-                        className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#03648a] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-                        title="View GRN"
-                      >
-                        <MdVisibility className="w-4 h-4 drop-shadow" />
-                      </button>
-                      <button
-                        onClick={() => handleEditGRN(grn)}
-                        className="action-btn-3d bg-gradient-to-br from-[#e4f4fa] to-[#b6e0fe] hover:from-[#b6e0fe] hover:to-[#0492C2] text-[#03648a] hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-                        title="Edit GRN"
-                      >
-                        <FaRegEdit className="w-4 h-4 drop-shadow" />
-                      </button>
-                      <button
-                        onClick={() => deleteGRN(grn.grn_id)}
-                        className="action-btn-3d bg-gradient-to-br from-red-100 to-red-200 hover:from-red-200 hover:to-red-400 text-red-400 hover:text-white rounded-full p-1.5 shadow-md transition-all duration-200"
-                        title="Delete GRN"
-                      >
-                        <MdDeleteOutline className="w-4 h-4 drop-shadow" />
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-[#e0e4ed]">
+              {filteredGRNs.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-8 text-[#5a6e9a]">
+                    {currentBranch ? 'No GRNs found for this branch.' : 'Please select a branch to view GRNs.'}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredGRNs.map((grn, idx) => (
+                  <tr 
+                    key={grn.grn_id} 
+                    className="hover:bg-[#f8fbff] transition-colors duration-150"
+                  >
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-[#4a5568]">
+                      {idx + 1}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-[#2d3748]">
+                      {grn.grn_id}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-[#4a5568]">
+                      {grn.supplier_name}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-[#4a5568]">
+                      {grn.invoice_number}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm text-[#4a5568]">
+                      {new Date(grn.invoice_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center">
+                      <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-[#e4f4fa] text-[#03648a]">
+                        {grn.items ? grn.items.length : 0}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm font-medium text-[#2d3748]">
+                      LKR {Number(grn.invoice_total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-sm">
+                      <div className="flex justify-center items-center space-x-1">
+                        <button
+                          onClick={() => handleViewGRN(grn.grn_id)}
+                          className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-[#5a6e9a] hover:bg-[#f0f4ff] hover:text-[#0b27b1] transition-colors duration-200 shadow-sm"
+                          title="View GRN"
+                        >
+                          <MdVisibility className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditGRN(grn)}
+                          className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-[#5a6e9a] hover:bg-[#f0f4ff] hover:text-[#0b27b1] transition-colors duration-200 shadow-sm"
+                          title="Edit GRN"
+                        >
+                          <FaRegEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteGRN(grn.grn_id)}
+                          className="p-1.5 rounded-lg bg-white border border-[#e0e4ed] text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 shadow-sm"
+                          title="Delete GRN"
+                        >
+                          <MdDeleteOutline className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

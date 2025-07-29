@@ -21,6 +21,8 @@ import Discounts from './pages/Discounts';
 import { POSProvider } from './context/POSContext';
 import { BranchProvider } from './context/BranchContext';
 import { StoreProvider } from './context/StoreContext';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
 
 export default function App() {
   return (
@@ -29,6 +31,11 @@ export default function App() {
       <StoreProvider>
       <Router>
         <Routes>
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+
+          {/* Main App Routes */}
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             
@@ -40,9 +47,6 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/add-order" element={<AddOrder />} />
-            
-           
-            
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/add-stock" element={<AddStock />} />
             <Route path="/suppliers" element={<Suppliers />} />
