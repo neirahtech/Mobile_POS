@@ -22,7 +22,7 @@ import { POSProvider } from './context/POSContext';
 import { BranchProvider } from './context/BranchContext';
 import { StoreProvider } from './context/StoreContext';
 import SignIn from './pages/SignIn';
-import SignUp from "./pages/Signup";
+import SignUp from "./pages/SignUp";
 
 export default function App() {
   return (
