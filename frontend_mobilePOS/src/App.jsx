@@ -33,7 +33,7 @@ export default function App() {
         <Routes>
           {/* Public Auth Routes */}
           <Route path="/login" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path="/SignUp" element={<SignUp />} />
 
           {/* Main App Routes */}
           <Route path="/" element={<Layout />}>
