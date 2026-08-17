@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/axios';
 import { Box, Button, TextField, Typography, Container, Paper, Link } from '@mui/material';
 
-const Signup = () => {
+const SignUp = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -135,4 +135,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default SignUp;
