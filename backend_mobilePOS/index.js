@@ -118,6 +118,18 @@ app.get('/health', (req, res) => {
 });
 const PORT = process.env.PORT || 8080;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    const runMigrations = require('./migrate');
+    await runMigrations();
+  } catch (err) {
+    console.error('Migrations failed:', err);
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();
