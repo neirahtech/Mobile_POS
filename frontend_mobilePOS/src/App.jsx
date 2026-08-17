@@ -22,7 +22,7 @@ import { POSProvider } from './context/POSContext';
 import { BranchProvider } from './context/BranchContext';
 import { StoreProvider } from './context/StoreContext';
 import SignIn from './pages/SignIn';
-import SignUp from './pages/SignUp';
+import SignUp from "./pages/Signup";
 
 export default function App() {
   return (
@@ -33,7 +33,7 @@ export default function App() {
         <Routes>
           {/* Public Auth Routes */}
           <Route path="/login" element={<SignIn />} />
-          <Route path="/SignUp" element={<SignUp />} />
+          <Route path="/signup" element={<SignUp />} />
 
           {/* Main App Routes */}
           <Route path="/" element={<Layout />}>
